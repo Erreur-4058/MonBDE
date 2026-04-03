@@ -1,0 +1,52 @@
+# Configuration files with sensitive data
+server/api/config.php
+.env
+.env.local
+
+# Database files
+database/database.sqlite
+database/*.db
+*.sqlite
+
+# Compiled and build files
+build/
+dist/
+*.o
+*.a
+*.so
+*.wasm
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Node modules and dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# OS-specific files
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+
+TODO
