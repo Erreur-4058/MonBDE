@@ -1,0 +1,49 @@
+[jeremi@4058-linux:…/Bureau/Documents/MonBDE] (main*) $ tree
+.
+├── bde_manager_rapport.docx
+├── build-wasm.sh
+├── conversion_resultat
+├── convertiser.js
+├── database
+│   ├── database.sqlite
+│   └── schema.sql
+├── public
+│   ├── admin
+│   │   ├── action.php
+│   │   ├── delete.php
+│   │   └── index.php
+│   ├── css
+│   │   └── style.css
+│   ├── js
+│   │   └── wasm
+│   │       ├── logic_engine.js
+│   │       └── logic_engine.wasm
+│   └── login
+│       ├── Discord_Symbol_Black
+│       │   ├── Discord-Symbol-Black.png
+│       │   └── Discord-Symbol-Black.svg
+│       ├── Discord_Symbol_White
+│       │   ├── Discord-Symbol-White.png
+│       │   └── Discord-Symbol-White.svg
+│       ├── index.html
+│       └── style.css
+├── server
+│   ├── api
+│   │   ├── config.php
+│   │   ├── setup_db.php
+│   │   └── wasm
+│   │       ├── logic_engine.node.js
+│   │       └── logic_engine.node.wasm
+│   ├── auth
+│   │   ├── auth_discord.php
+│   │   └── auth_google.php
+│   ├── bot
+│   ├── login
+│   │   ├── login_discord.php
+│   │   └── login_google.php
+│   └── wasm_src
+│       └── user_logic.cpp
+└── TODO
+
+18 directories, 27 files
+
