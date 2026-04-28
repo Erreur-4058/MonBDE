@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="system">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snack — Commande en ligne</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="manifest" href="../manifest.json">
+<style>
+  /* ─── VARIABLES DE THÈME ─── */
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --card: #222222;
+    --border: #2e2e2e;
+    --accent: #f59e0b;
+    --accent-rgb: 245, 158, 11;
+    --text: #f0f0f0;
+    --muted: #ffffff;
+    --green: #22c55e;
+    --radius: 14px;
+    --header-h: 70px;
+  }
+
+  [data-theme="light"] {
+    --bg: #f3f4f6;
+    --surface: #ffffff;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #000000;
+  }
+
+  @media (prefers-color-scheme: light) {
+    [data-theme="system"] {
+        --bg: #f3f4f6;
+        --surface: #ffffff;
+        --card: #ffffff;
+        --border: #e5e7eb;
+        --text: #111827;
+        --muted: #000000;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .icon-svg { width: 1.2em; height: 1.2em; vertical-align: middle; fill: none; stroke: currentColor; stroke-width: 16; stroke-linecap: round; stroke-linejoin: round;}
+
+  /* ─── HEADER ─── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: var(--header-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+  .logo span { color: var(--accent); }
+
+  .header-actions { display: flex; align-items: center; gap: 12px; }
+
+  /* Boutons Action */
+  .action-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: 0.2s;
+  }
+  .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .cart-count {
+    background: var(--accent); color: #000;
+    font-size: 0.7rem; font-weight: 900;
+    min-width: 18px; height: 18px; padding: 0 4px;
+    border-radius: 10px; margin-left: 5px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ─── LAYOUT ─── */
+  main {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    max-width: 1280px; margin: 0 auto; padding: 24px; gap: 24px;
+  }
+  @media (max-width: 1000px) {
+    main { grid-template-columns: 1fr; padding: 16px; }
+    .logo span { display: none; }
+  }
+
+  /* ─── PRODUITS ─── */
+  .cat-title { font-family: 'Syne', sans-serif; font-size: 0.9rem; color: var(--accent); text-transform: uppercase; margin: 30px 0 15px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+  .produits-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
+  
+  .produit-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 8px; transition: 0.2s; position: relative;
+  }
+  .produit-card.in-cart { border-color: var(--green); border-width: 2px; }
+  .produit-img { width: 100%; height: 120px; object-fit: cover; border-radius: 10px; background: #333; }
+  
+  .badge-cart {
+    position: absolute; top: 8px; right: 8px; background: var(--green); color: #000;
+    font-size: 0.6rem; font-weight: 900; border-radius: 20px; padding: 2px 8px; display: none;
+  }
+  .produit-card.in-cart .badge-cart { display: flex; align-items: center; gap: 4px; }
+
+  .produit-qty-bar {
+    display: none; align-items: center; justify-content: space-between;
+    background: var(--surface); border-radius: 8px; padding: 4px; margin-top: 5px;
+  }
+  .produit-card.in-cart .produit-qty-bar { display: flex; }
+  .qty-btn { background: var(--border); border: none; color: var(--text); width: 26px; height: 26px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+  .qty-btn:hover { background: var(--accent); color: #000; }
+
+/* ─── PRIX ADHERENT (Bulle contrastée) ─── */
+  .prix-adherent { 
+    font-size: 0.75rem; 
+    font-weight: 700;
+    padding: 4px 10px; 
+    border-radius: 8px; 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 4px;
+    margin-top: 5px;
+    /* Couleurs par défaut (Dark Theme) */
+    color: #4ade80; /* Vert très vif et clair */
+    background: rgba(74, 222, 128, 0.15); 
+    border: 1px solid rgba(74, 222, 128, 0.3);
+  }
+
+  /* Couleurs pour le Light Theme (on fonce le texte pour le contraste) */
+  [data-theme="light"] .prix-adherent {
+    color: #15803d; /* Vert sapin foncé pour être lisible sur fond blanc */
+    background: rgba(22, 163, 74, 0.1);
+    border: 1px solid rgba(22, 163, 74, 0.2);
+  }
+
+  /* Gestion du mode System (Auto) */
+  @media (prefers-color-scheme: light) {
+    [data-theme="system"] .prix-adherent {
+        color: #15803d;
+        background: rgba(22, 163, 74, 0.1);
+        border: 1px solid rgba(22, 163, 74, 0.2);
+    }
+  }
+  /* ─── BADGES STOCK (Correction Contraste) ─── */
+  .stock-badge {
+    font-size: 0.65rem;
+    font-weight: 800; /* Plus épais pour la lecture */
+    border-radius: 20px;
+    padding: 3px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    border: 1px solid transparent;
+  }
+
+  /* --- MODE DARK (Par défaut) --- */
+  .stock-ok { 
+    color: #4ade80; 
+    background: rgba(74, 222, 128, 0.15); 
+    border-color: rgba(74, 222, 128, 0.3);
+  }
+  .stock-low { 
+    color: #fbbf24; 
+    background: rgba(251, 191, 36, 0.15); 
+    border-color: rgba(251, 191, 36, 0.3);
+  }
+  .stock-out { 
+    color: #f87171; 
+    background: rgba(248, 113, 113, 0.15); 
+    border-color: rgba(248, 113, 113, 0.3);
+  }
+
+  /* --- MODE LIGHT (Adaptation contraste) --- */
+  [data-theme="light"] .stock-ok {
+    color: #166534; /* Vert foncé */
+    background: rgba(22, 163, 74, 0.12);
+    border-color: rgba(22, 163, 74, 0.2);
+  }
+  [data-theme="light"] .stock-low {
+    color: #92400e; /* Orange/Brun foncé */
+    background: rgba(217, 119, 6, 0.12);
+    border-color: rgba(217, 119, 6, 0.2);
+  }
+  [data-theme="light"] .stock-out {
+    color: #991b1b; /* Rouge sang foncé */
+    background: rgba(220, 38, 38, 0.1);
+    border-color: rgba(220, 38, 38, 0.2);
+  }
+
+  /* Gestion du mode System (Auto) pour le Light */
+  @media (prefers-color-scheme: light) {
+    [data-theme="system"] .stock-ok { color: #166534; background: rgba(22, 163, 74, 0.12); border-color: rgba(22, 163, 74, 0.2); }
+    [data-theme="system"] .stock-low { color: #92400e; background: rgba(217, 119, 6, 0.12); border-color: rgba(217, 119, 6, 0.2); }
+    [data-theme="system"] .stock-out { color: #991b1b; background: rgba(220, 38, 38, 0.1); border-color: rgba(220, 38, 38, 0.2); }
+  }
+
+  /* ─── PANIER ─── */
+  .panier-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; }
+  .form-group input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 10px; outline: none; }
+  .form-group input:disabled { background: var(--border); opacity: 0.7; cursor: not-allowed; }
+
+  .btn-commander { width: 100%; background: var(--accent); color: #000; border: none; padding: 16px; border-radius: var(--radius); font-weight: 800; cursor: pointer; font-family: 'Syne', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px;}
+  .btn-commander:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .btn-discord { background: #5865F2; color: white; text-decoration: none; padding: 10px 16px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+ 
+/* MODALE VERSION DESIGN */
+  .modal-overlay { 
+    display: none; position: fixed; inset: 0; 
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); /* Flou d'arrière-plan */
+    z-index: 1000; align-items: center; justify-content: center; padding: 20px; 
+  }
+
+  .modal-content { 
+    background: var(--surface); padding: 40px 30px; border-radius: 24px; 
+    text-align: center; max-width: 380px; width: 100%; 
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    animation: modalPop 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  }
+
+  @keyframes modalPop {
+    from { opacity: 0; transform: scale(0.8) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .ticket-badge {
+    background: rgba(var(--accent-rgb), 0.1);
+    color: var(--accent);
+    display: inline-flex;
+    align-items: center; /* Centre verticalement les éléments */
+    justify-content: center;
+    padding: 15px 30px;
+    border-radius: 20px;
+    margin: 20px 0;
+    border: 2px dashed var(--accent);
+    gap: 10px; /* Espace entre le # et le chiffre */
+  }
+
+  #modalNumero { 
+    font-weight: 800; 
+    font-size: 3.5rem; 
+    font-family: 'Syne', sans-serif;
+    margin: 0; /* SUPPRIME LA MARGE QUI DÉCALE TOUT */
+    padding: 0;
+    line-height: 1;
+    display: inline-block;
+  }
+
+  .ticket-hash {
+    font-size: 1.8rem; 
+    font-weight: 800; 
+    opacity: 0.5;
+    line-height: 1;
+    margin-top: 5px; /* Ajustement fin si le # semble encore trop haut */
+  }
+
+
+</style>
+</head>
+<body>
+<button id="installBtn" style="display:none; width:100%; background:#f59e0b; color:black; font-weight:800; border:none; padding:15px; position:fixed; bottom:0; z-index:9999;">
+   📲 INSTALLER L'APPLICATION SNACK
+</button>
+<script>
+  const ICONS_SVG = {
+    cart: `<svg class="icon-svg" viewBox="0 0 256 256"><path d="M188,184H91.17a16,16,0,0,1-15.74-13.14L48.73,24H24" fill="none"/><circle cx="92" cy="204" r="20" fill="none"/><circle cx="188" cy="204" r="20" fill="none"/><path d="M70.55,144H196.1a16,16,0,0,0,15.74-13.14L224,64H56" fill="none"/></svg>`,
+    cookie: `<svg class="icon-svg" viewBox="0 0 256 256"><circle cx="156" cy="172" r="12"/><circle cx="92" cy="164" r="12"/><circle cx="84" cy="108" r="12"/><circle cx="132" cy="124" r="12"/><path d="M224,128a48,48,0,0,1-48-48,48,48,0,0,1-48-48,96,96,0,1,0,96,96Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>`,
+    sun: `<svg class="icon-svg" viewBox="0 0 256 256"><line x1="128" y1="40" x2="128" y2="16" fill="none"/><circle cx="128" cy="128" r="56" fill="none"/><line x1="64" y1="64" x2="48" y2="48" fill="none"/><line x1="64" y1="192" x2="48" y2="208" fill="none"/><line x1="192" y1="64" x2="208" y2="48" fill="none"/><line x1="192" y1="192" x2="208" y2="208" fill="none"/><line x1="40" y1="128" x2="16" y2="128" fill="none"/><line x1="128" y1="216" x2="128" y2="240" fill="none"/><line x1="216" y1="128" x2="240" y2="128" fill="none"/></svg>`,
+    system: `<svg class="icon-svg" viewBox="0 0 256 256"><rect x="32" y="48" width="192" height="144" rx="16" transform="translate(256 240) rotate(180)" fill="none"/><line x1="160" y1="224" x2="96" y2="224" fill="none"/><line x1="32" y1="152" x2="224" y2="152" fill="none"/><line x1="128" y1="192" x2="128" y2="224" fill="none"/></svg>`,
+    moon: `<svg class="icon-svg" viewBox="0 0 256 256"><path d="M108.11,28.11A96.09,96.09,0,0,0,227.89,147.89,96,96,0,1,1,108.11,28.11Z" fill="none"/></svg>`,
+    party: `<svg class="icon-svg" viewBox="0 0 256 256"><path d="M40.49,205.52,93,61.14a7.79,7.79,0,0,1,12.84-2.85l91.88,91.88A7.79,7.79,0,0,1,194.86,163L50.48,215.51A7.79,7.79,0,0,1,40.49,205.52Z" fill="none"/><path d="M168,72s0-24,24-24,24-24,24-24" fill="none"/><line x1="144" y1="16" x2="144" y2="40" fill="none"/><line x1="216" y1="112" x2="232" y2="128" fill="none"/><line x1="216" y1="80" x2="240" y2="72" fill="none"/><line x1="78.09" y1="102.09" x2="153.91" y2="177.91" fill="none"/><line x1="101.11" y1="197.11" x2="58.89" y2="154.89" fill="none"/></svg>`,
+    check: `<svg class="icon-svg" viewBox="0 0 256 256"><polyline points="40 144 96 200 224 72" fill="none"/></svg>`,
+    user: `<svg class="icon-svg" viewBox="0 0 256 256"><circle cx="108" cy="100" r="60" fill="none"/><path d="M24,200c20.55-24.45,49.56-40,84-40s63.45,15.55,84,40" fill="none"/></svg>`,
+    note: `<svg class="icon-svg" viewBox="0 0 256 256"><path d="M216,128v80a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V48a8,8,0,0,1,8-8h80" fill="none"/><polyline points="128 160 96 160 96 128 192 32 224 64 128 160" fill="none"/></svg>`,
+    discord: `<svg class="icon-svg" viewBox="0 0 256 256" fill="currentColor" stroke="none"><path d="M208.31,75.68A59.78,59.78,0,0,0,162.16,52a.39.39,0,0,0-.24.11,104.59,104.59,0,0,0-4.63,9.5.38.38,0,0,1-.35.15,110.61,110.61,0,0,0-57.88,0,.39.39,0,0,1-.35-.15c-1.51-2-3.09-4.12-4.63-9.5a.39.39,0,0,0-.24-.11,59.8,59.8,0,0,0-46.16,23.68.37.37,0,0,0-.07.27C21.2,143.51,33.51,202,57,236.73a.41.41,0,0,0,.31.19c15,10.94,29.35,17.61,43.43,21.94a.39.39,0,0,0,.42-.14c3.31-4.52,6.26-9.35,8.81-14.41a.39.39,0,0,0-.21-.54,72.4,72.4,0,0,1-10.37-4.94.39.39,0,0,1,0-.66,49.2,49.2,0,0,0,2.1-1.64.38.38,0,0,1,.4,0,121.21,121.21,0,0,0,52.22,0,.38.38,0,0,1,.4,0c.67.57,1.37,1.13,2.1,1.64a.39.39,0,0,1,0,.66,73.13,73.13,0,0,1-10.38,4.94.39.39,0,0,0-.21.54c2.55,5.06,5.5,9.89,8.81,14.41a.41.41,0,0,0,.42.14c14.08-4.33,28.43-11,43.43-21.94a.39.39,0,0,0,.31-.19c23.51-34.72,35.82-93.22,14.73-160.78A.37.37,0,0,0,208.31,75.68ZM87.16,190c-10.33,0-18.88-9.48-18.88-21.11s8.35-21.11,18.88-21.11,18.88,9.48,18.88,21.11S97.5,190,87.16,190Zm81.68,0c-10.33,0-18.88-9.48-18.88-21.11s8.35-21.11,18.88-21.11,18.88,9.48,18.88,21.11S179.17,190,168.84,190Z"/></svg>`  };
+</script>
+
+<header>
+  <div class="logo"><script>document.write(ICONS_SVG.cookie)</script> <span>Snack</span></div>
+  <div class="header-actions">
+    <!-- Bouton Thème cyclique -->
+    <button class="action-btn" id="themeToggleBtn" onclick="cycleTheme()" title="Changer le thème"></button>
+    
+    <!-- Bouton Panier -->
+    <button class="action-btn" onclick="scrollToPanier()">
+      <script>document.write(ICONS_SVG.cart)</script>
+      <span class="cart-count" id="cartCount">0</span>
+    </button>
+    
+    <div id="userInfo"></div>
+  </div>
+</header>
+
+<main>
+  <section id="menuSection"><p style="text-align:center; padding:50px; color:var(--muted);">Chargement...</p></section>
+
+  <aside class="panier-col" id="panierCol">
+    <div class="panier-box">
+      <h3 style="margin-bottom:15px; display:flex; align-items:center; gap:8px;">
+        <script>document.write(ICONS_SVG.cart)</script> Panier
+      </h3>
+      <div id="panierLignes"></div>
+      <div id="panierTotaux" style="display:none; margin-top:15px; border-top:1px solid var(--border); padding-top:10px;">
+        <div style="display:flex; justify-content:space-between;"><span>Total</span> <strong id="totalNormal">0€</strong></div>
+        <div style="display:flex; justify-content:space-between; color:var(--green); font-size:0.9rem;">
+          <span>Prix Adhérent</span> <strong id="totalAdherent">0€</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="panier-box">
+      <h3 style="margin-bottom:15px; display:flex; align-items:center; gap:8px;">
+        <script>document.write(ICONS_SVG.note)</script> Infos
+      </h3>
+      <div class="form-group">
+        <label>Ton prénom / pseudo</label>
+        <input type="text" id="inputPrenom" placeholder="Ex: Théo">
+      </div>
+      <div class="form-group">
+        <label>Pseudo Discord</label>
+        <input type="text" id="inputDiscord" placeholder="Optionnel">
+      </div>
+      <button class="btn-commander" id="btnCommander" onclick="passerCommande()" disabled>
+        <script>document.write(ICONS_SVG.check)</script> Envoyer
+      </button>
+    </div>
+  </aside>
+</main>
+
+<div class="modal-overlay" id="modalSucces">
+    <div class="modal-content">
+        <div style="color: var(--accent); margin-bottom: 20px;">
+            <script>document.write(ICONS_SVG.party)</script>
+        </div>
+        
+        <h2>Commande envoyée !</h2>
+        <p>Merci pour votre achat. Voici votre numéro de retrait :</p>
+        
+        <div class="ticket-badge">
+    <span class="ticket-hash">#</span>
+    <span id="modalNumero"></span> <!-- On utilise span au lieu de p pour plus de sécurité -->
+</div>
+        
+        <p style="margin-bottom: 30px;">Présentez ce numéro au comptoir pour récupérer votre commande.</p>
+        
+        <button class="btn-commander" onclick="location.reload()">
+            C'est noté !
+        </button>
+    </div>
+</div>
+<script>
+// --- CONFIG & STATE ---
+const API_BASE = window.location.origin + '/Snack/api';
+
+let panier = {};
+let catalogue = [];
+let currentDiscordUser = JSON.parse(localStorage.getItem('discord_user')) || null;
+
+// --- GESTION DU THÈME CYCLIQUE ---
+const themes = ['system', 'light', 'dark'];
+let currentTheme = localStorage.getItem('snack_theme') || 'system';
+
+function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('snack_theme', t);
+    const btn = document.getElementById('themeToggleBtn');
+    if (t === 'system') btn.innerHTML = ICONS_SVG.system;
+    else if (t === 'light') btn.innerHTML = ICONS_SVG.sun;
+    else btn.innerHTML = ICONS_SVG.moon;
+}
+
+function cycleTheme() {
+    let idx = themes.indexOf(currentTheme);
+    currentTheme = themes[(idx + 1) % themes.length];
+    applyTheme(currentTheme);
+}
+applyTheme(currentTheme);
+
+// --- AUTH ---
+function updateAuthDisplay() {
+    const box = document.getElementById('userInfo');
+    const inName = document.getElementById('inputPrenom');
+    const inDiscord = document.getElementById('inputDiscord');
+
+    if (currentDiscordUser) {
+        box.innerHTML = `<button onclick="logout()" class="action-btn" style="color:var(--muted)">Déconnexion</button>`;
+        inName.value = currentDiscordUser.username;
+        inName.disabled = true;
+        inDiscord.value = currentDiscordUser.username;
+        inDiscord.disabled = true;
+    } else {
+        box.innerHTML = `
+            <a href="${API_BASE}/login.php" class="btn-discord">
+                <div>
+                    <span>Connexion</span>
+                    <span class="opt">Facultatif</span>
+                </div>
+            </a>
+        `;
+    }
+}
+function logout() { localStorage.removeItem('discord_user'); location.reload(); }
+
+// --- LOGIQUE MENU ---
+async function chargerMenu() {
+    try {
+        const r = await fetch(`${API_BASE}/produits.php`);
+        const res = await r.json();
+        catalogue = res.data.flatMap(c => c.produits);
+        afficherMenu(res.data);
+    } catch (e) { console.error(e); }
+}
+
+function afficherMenu(categories) {
+    const el = document.getElementById('menuSection');
+    el.innerHTML = '';
+    categories.forEach(cat => {
+        const div = document.createElement('div');
+        div.innerHTML = `<h2 class="cat-title">${cat.categorie}</h2>`;
+        const grid = document.createElement('div');
+        grid.className = 'produits-grid';
+        cat.produits.forEach(p => {
+            const card = document.createElement('div');
+            const rupture = p.en_rupture === true;
+            card.className = 'produit-card' + (rupture ? ' rupture' : '');
+            card.id = `prod-${p.id}`;
+            if (!rupture) card.onclick = () => toggleProduit(p);
+
+            // Badge stock
+            let stockBadge = '';
+            if (p.stock === -1) {
+                stockBadge = ''; // Illimité = pas de badge
+            } else if (p.stock === 0) {
+                stockBadge = `<span class="stock-badge stock-out">Rupture</span>`;
+            } else if (p.stock <= 5) {
+                stockBadge = `<span class="stock-badge stock-low">⚠ ${p.stock} restant${p.stock > 1 ? 's' : ''}</span>`;
+            } else {
+                stockBadge = `<span class="stock-badge stock-ok">${p.stock} en stock</span>`;
+            }
+
+            card.innerHTML = `
+                <div class="badge-cart"><script>document.write(ICONS_SVG.check)<\/script> Sélectionné</div>
+                <img src="${p.image ? API_BASE+'/uploads/'+p.image : 'https://via.placeholder.com/150'}" class="produit-img">
+                <div style="font-weight:600; font-size:0.85rem;">${p.nom}</div>
+                <div style="margin-top:auto;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+                        <div style="font-weight:800;">${p.prix_normal.toFixed(2)}€</div>
+                        ${stockBadge}
+                    </div>
+                    <div class="prix-adherent"><script>document.write(ICONS_SVG.user)<\/script> ${p.prix_adherent.toFixed(2)}€</div>
+                </div>
+                <div class="produit-qty-bar">
+                    <button class="qty-btn" onclick="event.stopPropagation(); changerQty(${p.id}, -1)">-</button>
+                    <span id="qty-val-${p.id}" style="font-weight:bold;">1</span>
+                    <button class="qty-btn" onclick="event.stopPropagation(); changerQty(${p.id}, 1)">+</button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+        div.appendChild(grid);
+        el.appendChild(div);
+    });
+}
+
+function toggleProduit(p) {
+    if (p.en_rupture) return;
+    if (panier[p.id]) delete panier[p.id];
+    else panier[p.id] = { ...p, qty: 1 };
+    majUI();
+}
+
+function changerQty(id, delta) {
+    if (!panier[id]) return;
+    const p = panier[id];
+    const maxQty = (p.stock !== undefined && p.stock !== -1) ? p.stock : Infinity;
+    panier[id].qty = Math.min(maxQty, Math.max(1, panier[id].qty + delta));
+    majUI();
+}
+
+function majUI() {
+    // Cartes
+    catalogue.forEach(p => {
+        const card = document.getElementById(`prod-${p.id}`);
+        const qtyLabel = document.getElementById(`qty-val-${p.id}`);
+        if (!card) return;
+        if (panier[p.id]) {
+            card.classList.add('in-cart');
+            qtyLabel.innerText = panier[p.id].qty;
+        } else {
+            card.classList.remove('in-cart');
+        }
+    });
+
+    // Panier side
+    const lines = document.getElementById('panierLignes');
+    const items = Object.values(panier);
+    document.getElementById('cartCount').innerText = items.reduce((a, b) => a + b.qty, 0);
+
+    if (items.length === 0) {
+        lines.innerHTML = '<p style="color:var(--muted); font-size:0.85rem; text-align:center;">Panier vide</p>';
+        document.getElementById('panierTotaux').style.display = 'none';
+        document.getElementById('btnCommander').disabled = true;
+        return;
+    }
+
+    lines.innerHTML = items.map(it => `
+        <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:5px;">
+            <span>${it.nom} x${it.qty}</span>
+            <strong>${(it.prix_normal * it.qty).toFixed(2)}€</strong>
+        </div>
+    `).join('');
+    
+    const totalN = items.reduce((a, b) => a + (b.prix_normal * b.qty), 0);
+    const totalA = items.reduce((a, b) => a + (b.prix_adherent * b.qty), 0);
+    document.getElementById('totalNormal').innerText = totalN.toFixed(2) + '€';
+    document.getElementById('totalAdherent').innerText = totalA.toFixed(2) + '€';
+    document.getElementById('panierTotaux').style.display = 'block';
+    
+    const ready = currentDiscordUser || document.getElementById('inputPrenom').value.trim().length > 0;
+    document.getElementById('btnCommander').disabled = !ready;
+}
+
+async function passerCommande() {
+    const btn = document.getElementById('btnCommander');
+    btn.disabled = true; 
+    btn.innerText = "Envoi...";
+    
+    // On récupère le nom (soit le champ, soit l'user Discord)
+    const nomClient = currentDiscordUser ? currentDiscordUser.username : document.getElementById('inputPrenom').value;
+
+    const payload = { 
+        prenom: nomClient, 
+        discord_id: currentDiscordUser ? currentDiscordUser.id : null, 
+        panier: Object.values(panier).map(it => ({ id: it.id, quantite: it.qty })) 
+    };
+
+    try {
+        const r = await fetch(`${API_BASE}/commande.php`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(payload) 
+        });
+        const res = await r.json();
+        
+        if (res.success) { 
+    // res.data.numero contient maintenant juste "1", "2"...
+     document.getElementById('modalNumero').innerText = res.data.numero; 
+    document.getElementById('modalSucces').style.display = 'flex'; 
+} else {
+            alert("Erreur: " + res.error);
+            btn.disabled = false;
+        }
+    } catch (e) { 
+        alert("Erreur de connexion au serveur"); 
+        btn.disabled = false; 
+    }
+}
+
+function scrollToPanier() { document.getElementById('panierCol').scrollIntoView({ behavior: 'smooth' }); }
+
+// Init
+updateAuthDisplay();
+chargerMenu();
+document.getElementById('inputPrenom').addEventListener('input', majUI);
+
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('../sw.js', { scope: '/' });
+  }
+
+  // 2. Gestion de l'installation
+  let deferredPrompt;
+  const installBtn = document.getElementById('installBtn');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // Empêche Chrome d'afficher sa petite barre automatique
+    e.preventDefault();
+    // Garde l'événement pour plus tard
+    deferredPrompt = e;
+    // Affiche notre bouton personnalisé
+    installBtn.style.display = 'block';
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      // Affiche la modale officielle de Chrome
+      deferredPrompt.prompt();
+      // Attend la réponse de l'utilisateur
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`Réponse installation : ${outcome}`);
+      // On cache notre bouton
+      deferredPrompt = null;
+      installBtn.style.display = 'none';
+    }
+  });
+
+  // Cacher le bouton si l'app est déjà installée
+  window.addEventListener('appinstalled', () => {
+    installBtn.style.display = 'none';
+    deferredPrompt = null;
+  });
+
+
+</script>
+</body>
+</html>
