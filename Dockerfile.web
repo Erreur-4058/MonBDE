@@ -4,6 +4,7 @@ FROM php:8.2-apache
 # Extensions PHP nécessaires
 RUN apt-get update && apt-get install -y \
         libsqlite3-dev \
+        sqlite3 \
         curl \
         unzip \
     && docker-php-ext-install pdo pdo_sqlite \
@@ -37,4 +38,13 @@ RUN chown -R www-data:www-data \
 # ─── Configuration Apache ─────────────────────────────────────────────────────
 COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
 
+COPY core/database/schema.sql ./core/database/schema.sql
+COPY docker/init-db.sh /usr/local/bin/init-db.sh
+RUN chmod +x /usr/local/bin/init-db.sh
+
+# Script de démarrage : init DB + apache
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 80
+ENTRYPOINT ["/entrypoint.sh"]
