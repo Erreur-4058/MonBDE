@@ -17,11 +17,11 @@ try {
     $pdo->exec($sql);
     echo "Base de données initialisée avec succès !<br>";
 
-    // ON S'AJOUTE SOI-MEME EN ADMIN (Remplace par ton vrai mail Google)
-    $email_admin = "rouxjeremi48@gmail.com"; 
+    // ON S'AJOUTE SOI-MEME EN ADMIN (Remplace par ton vrai mail Google) 
+    $email_admin = "rouxjeremi48@gmail.com";
     $stmt = $pdo->prepare("INSERT OR IGNORE INTO users (username, google_email, role) VALUES ('Admin', ?, 'admin')");
     $stmt->execute([$email_admin]);
-    
+
     echo "Utilisateur admin ($email_admin) ajouté !";
 } catch (Exception $e) {
     echo "Erreur : " . $e->getMessage();
