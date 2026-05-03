@@ -3,7 +3,7 @@ name: 🚀 Deploy MonBDE to Production
 on:
   push:
     branches:
-      - prod   # Se déclenche uniquement sur push vers prod
+      - prod
 
 jobs:
   deploy:
@@ -15,14 +15,26 @@ jobs:
       - name: ⬇️ Checkout code
         uses: actions/checkout@v4
 
-      # ── 2. Se connecter au serveur via SSH et déployer ──────────────────────
+      # ── 2. Déployer via SSH ─────────────────────────────────────────────────
       - name: 🔐 Deploy to server
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          GOOGLE_CLIENT_ID:          ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET:      ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          DISCORD_CLIENT_ID:         ${{ secrets.DISCORD_CLIENT_ID }}
+          DISCORD_CLIENT_SECRET:     ${{ secrets.DISCORD_CLIENT_SECRET }}
+          DISCORD_WEBHOOK_URL:       ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_CHANNEL_COMMANDES: ${{ secrets.DISCORD_CHANNEL_COMMANDES }}
+          DISCORD_TOKEN:             ${{ secrets.DISCORD_TOKEN }}
+          DISCORD_GUILD_ID:          ${{ secrets.DISCORD_GUILD_ID }}
+          API_BOT_TOKEN:             ${{ secrets.API_BOT_TOKEN }}
+          BOT_HTTP_PORT:             ${{ secrets.BOT_HTTP_PORT }}
         with:
           host:     ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
-          port:     ${{ secrets.SSH_PORT || 22 }}
+          port:     ${{ secrets.SSH_PORT }}
+          envs: GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,DISCORD_CLIENT_ID,DISCORD_CLIENT_SECRET,DISCORD_WEBHOOK_URL,DISCORD_CHANNEL_COMMANDES,DISCORD_TOKEN,DISCORD_GUILD_ID,API_BOT_TOKEN,BOT_HTTP_PORT
           script: |
             set -e
 
@@ -38,32 +50,32 @@ jobs:
               git pull origin prod
             fi
 
-            # ── Générer le .env principal pour docker-compose ─────────────────
-            cat > .env <<EOF
-GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }}
-DISCORD_CLIENT_SECRET=${{ secrets.DISCORD_CLIENT_SECRET }}
-DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}
-DISCORD_CHANNEL_COMMANDES=${{ secrets.DISCORD_CHANNEL_COMMANDES }}
-DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}
-DISCORD_GUILD_ID=${{ secrets.DISCORD_GUILD_ID }}
-API_BOT_TOKEN=${{ secrets.API_BOT_TOKEN }}
-API_BASE_URL=https://monbde.duckdns.org/Snack/api
-BOT_HTTP_PORT=${{ secrets.BOT_HTTP_PORT }}
-EOF
+            # ── Générer le .env principal (docker-compose) ────────────────────
+            {
+              echo "GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}"
+              echo "GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}"
+              echo "DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}"
+              echo "DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}"
+              echo "DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}"
+              echo "DISCORD_CHANNEL_COMMANDES=${DISCORD_CHANNEL_COMMANDES}"
+              echo "DISCORD_TOKEN=${DISCORD_TOKEN}"
+              echo "DISCORD_GUILD_ID=${DISCORD_GUILD_ID}"
+              echo "API_BOT_TOKEN=${API_BOT_TOKEN}"
+              echo "API_BASE_URL=https://monbde.duckdns.org/Snack/api"
+              echo "BOT_HTTP_PORT=${BOT_HTTP_PORT}"
+            } > .env
 
-            # ── Générer le .env du bot ────────────────────────────────────────
-            cat > Snack/bot/.env <<EOF
-DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}
-DISCORD_GUILD_ID=${{ secrets.DISCORD_GUILD_ID }}
-DISCORD_CHANNEL_COMMANDES=${{ secrets.DISCORD_CHANNEL_COMMANDES }}
-API_BASE_URL=https://monbde.duckdns.org/Snack/api
-API_BOT_TOKEN=${{ secrets.API_BOT_TOKEN }}
-BOT_HTTP_PORT=${{ secrets.BOT_HTTP_PORT }}
-EOF
+            # ── Générer le .env du bot Discord ────────────────────────────────
+            {
+              echo "DISCORD_TOKEN=${DISCORD_TOKEN}"
+              echo "DISCORD_GUILD_ID=${DISCORD_GUILD_ID}"
+              echo "DISCORD_CHANNEL_COMMANDES=${DISCORD_CHANNEL_COMMANDES}"
+              echo "API_BASE_URL=https://monbde.duckdns.org/Snack/api"
+              echo "API_BOT_TOKEN=${API_BOT_TOKEN}"
+              echo "BOT_HTTP_PORT=${BOT_HTTP_PORT}"
+            } > Snack/bot/.env
 
-            # ── (Re)construire et redémarrer les conteneurs Docker ────────────
+            # ── (Re)construire et redémarrer Docker ───────────────────────────
             docker compose down --remove-orphans
             docker compose build --no-cache
             docker compose up -d
