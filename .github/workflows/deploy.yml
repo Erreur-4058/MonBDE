@@ -42,7 +42,7 @@ jobs:
             REPO_DIR="${HOME}/MonBDE_prod"
             if [ ! -d "${REPO_DIR}/.git" ]; then
               rm -rf "${REPO_DIR}"
-              git clone https://github.com/Erreur-4058/MonBDE.git "${REPO_DIR}"
+              git clone git@github.com:Erreur-4058/MonBDE.git "${REPO_DIR}"
               cd "${REPO_DIR}"
               git checkout prod
             else
