@@ -1,14 +1,16 @@
-# Configuration files with sensitive data
-server/api/config.php
+# ─── Secrets & config sensibles ───────────────────────────────────────────────
 .env
 .env.local
 
-# Database files
+# ─── Base de données (gérées par Docker volumes) ──────────────────────────────
+*.sqlite
+*.db
 database/database.sqlite
 database/*.db
-*.sqlite
+core/database/database.sqlite
+Snack/db/snack.sqlite
 
-# Compiled and build files
+# ─── Build / compilation ───────────────────────────────────────────────────────
 build/
 dist/
 *.o
@@ -16,7 +18,7 @@ dist/
 *.so
 *.wasm
 
-# IDE and editor files
+# ─── IDE & éditeurs ───────────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
@@ -25,36 +27,30 @@ dist/
 .DS_Store
 *.sublime-project
 *.sublime-workspace
+.AppleDouble
+.LSOverride
+Thumbs.db
 
-# Node modules and dependencies
+# ─── Node ─────────────────────────────────────────────────────────────────────
 node_modules/
 package-lock.json
 yarn.lock
 
-# OS-specific files
-Thumbs.db
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Logs
+# ─── Logs ─────────────────────────────────────────────────────────────────────
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Temporary files
+# ─── Fichiers temporaires ──────────────────────────────────────────────────────
 *.tmp
 *.temp
 .cache/
 
-
+# ─── Fichiers projet exclus ────────────────────────────────────────────────────
 TODO
 bde_manager_rapport.docx
 conversion_resultat
 convertiser.js
 Snack/api/uploads
-Snack/api/config.php
 Snack/README.md
-core/database/database.sqlite
-core/server/api/config.php

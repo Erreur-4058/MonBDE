@@ -7,10 +7,9 @@ $code = $_GET['code'] ?? null;
 if (!$code) die("Erreur : Pas de code reçu.");
 
 // --- CONFIGURATION ---
-$clientId     = '1485358310503878848';
-// COPIE TON SECRET ICI ET RIEN D'AUTRE
-$clientSecret = trim('8GHdTAq0ZQC7zcACStQo9qSh2jX9fvPY'); 
-$redirectUri  = 'http://127.0.0.1:8080/Snack/api/login_callback.php';
+$clientId     = getenv('DISCORD_CLIENT_ID') ?: '1485358310503878848';
+$clientSecret = trim(getenv('DISCORD_CLIENT_SECRET'));
+$redirectUri  = 'https://monbde.duckdns.org/Snack/api/login_callback.php';
 
 // --- ÉCHANGE ---
 $params = [

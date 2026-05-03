@@ -70,5 +70,31 @@ if ($action == 'unlink_discord') {
     $stmt->execute([$id]);
 }
 
+
+if ($action == 'generate_invite') {
+    $token = bin2hex(random_bytes(16)); // Crée un jeton aléatoire
+    $role = $_POST['role_invite'] ?? 'user';
+    $stmt = $pdo->prepare("INSERT INTO invitations (token, role_attribue) VALUES (?, ?)");
+    $stmt->execute([$token, $role]);
+    header('Location: index.php?success=invite_created');
+    exit();
+}
+
+// Supprimer une invitation
+if ($action == 'delete_invite') {
+    $stmt = $pdo->prepare("DELETE FROM invitations WHERE id = ?");
+    $stmt->execute([$id]);
+    header('Location: index.php');
+    exit();
+}
+
+if ($action == 'logout') {
+    $_SESSION = []; // Vide les variables de session
+    session_destroy(); // Détruit le cookie
+    header('Location: ../login/index.html');
+    exit();
+}
+
+
 header('Location: index.php');
 exit();

@@ -34,13 +34,20 @@ $avatar_url = "https://cdn.discordapp.com/avatars/{$discord_id}/{$avatar_hash}.p
 
 if (isset($_SESSION['user_id'])) {
     // CAS 1 : L'utilisateur est déjà connecté (LIAISON)
-    // On met à jour la ligne de l'utilisateur actuel avec ses infos Discord
+    
+    // Vérifier si ce compte Discord n'appartient pas déjà à quelqu'un d'autre
+    $check = $pdo->prepare("SELECT id FROM users WHERE discord_id = ? AND id != ?");
+    $check->execute([$discord_id, $_SESSION['user_id']]);
+    if ($check->fetch()) {
+        die("Erreur : Ce compte Discord est déjà lié à un autre utilisateur.");
+    }
+
+    // On met à jour l'utilisateur actuel
     $stmt = $pdo->prepare("UPDATE users SET discord_id = ?, discord_email = ?, discord_picture = ? WHERE id = ?");
     $stmt->execute([$discord_id, $discord_email, $avatar_url, $_SESSION['user_id']]);
     
     header('Location: ../../public/admin/index.php?success=discord_linked');
     exit();
-
 } else {
     // CAS 2 : L'utilisateur n'est pas connecté (TENTATIVE DE CONNEXION)
     // On cherche si un compte existe avec cet ID Discord ou cet Email
@@ -58,8 +65,44 @@ if (isset($_SESSION['user_id'])) {
         
         header('Location: ../../public/admin/index.php');
         exit();
-    } else {
-        // Ni connecté, ni déjà inscrit en base
-        die("Accès refusé : Votre compte Discord ($discord_email) n'est pas autorisé par l'administrateur. Demandez à l'admin de vous ajouter via votre mail.");
+    } elseif (isset($_SESSION['pending_invite_token'])) {
+        
+        // 1. Créer l'utilisateur avec les infos Discord
+        $stmt = $pdo->prepare("INSERT INTO users (username, discord_id, discord_email, discord_picture) VALUES (?, ?, ?, ?)");
+        $stmt->execute([
+            $userinfo['username'], 
+            $discord_id, 
+            $discord_email, 
+            $avatar_url
+        ]);
+        $new_user_id = $pdo->lastInsertId();
+
+        // 2. Lui attribuer son rôle d'invité (ex: 'staff-snack')
+        $role_name = $_SESSION['pending_invite_role'];
+        $role_stmt = $pdo->prepare("SELECT id FROM roles WHERE name = ?");
+        $role_stmt->execute([$role_name]);
+        $role_id = $role_stmt->fetchColumn();
+
+        if ($role_id) {
+            $stmt = $pdo->prepare("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)");
+            $stmt->execute([$new_user_id, $role_id]);
+        }
+
+        // 3. Nettoyage : Supprimer l'invitation utilisée et vider la session d'attente
+        $stmt = $pdo->prepare("DELETE FROM invitations WHERE token = ?");
+        $stmt->execute([$_SESSION['pending_invite_token']]);
+        
+        unset($_SESSION['pending_invite_token']);
+        unset($_SESSION['pending_invite_role']);
+
+        // 4. Connecter l'utilisateur automatiquement
+        $_SESSION['user_id'] = $new_user_id;
+        
+        header('Location: ../../public/admin/index.php?success=account_created');
+        exit();
+    }
+    else {
+        // Personne ne peut entrer sans être déjà en DB ou avoir un lien d'invitation
+        die("Accès refusé : Votre compte Discord n'est pas autorisé. Demandez un lien d'invitation à l'administrateur.");
     }
 }

@@ -1,0 +1,18 @@
+FROM node:20-alpine
+
+# Dossier de travail
+WORKDIR /app
+
+# Copie des dépendances en premier (cache Docker)
+COPY package.json ./
+RUN npm install --omit=dev
+
+# Copie du code source du bot
+COPY index.js ./
+
+# Le .env est injecté via les variables d'environnement Docker (pas de fichier .env ici)
+# Les secrets arrivent depuis docker-compose / GitHub Actions
+
+EXPOSE 3001
+
+CMD ["node", "index.js"]

@@ -87,7 +87,8 @@ foreach ($lignes as $l) {
 }
 
 // 5. Notifier le Bot Discord
-$bot_url = 'http://localhost:3001/nouvelle-commande';
+// Communication interne Docker : le service s'appelle 'bot' sur le réseau monbde_net
+$bot_url = 'http://bot:3001/nouvelle-commande';
 $payload_bot = [
     'numero' => $numero_db, // On envoie le numéro complet au bot
     'prenom' => $prenom,

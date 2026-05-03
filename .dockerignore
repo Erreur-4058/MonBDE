@@ -1,0 +1,24 @@
+# ─── Dépendances Node ─────────────────────────────────────────────────────────
+node_modules/
+package-lock.json
+
+# ─── Base de données (volumes Docker) ────────────────────────────────────────
+*.sqlite
+*.db
+
+# ─── Secrets ──────────────────────────────────────────────────────────────────
+.env
+.env.local
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+
+# ─── Fichiers inutiles dans l'image ──────────────────────────────────────────
+.git
+.gitignore
+.github
+*.md
+bde_manager_rapport.docx
+TODO
+convertiser.js
+conversion_resultat/

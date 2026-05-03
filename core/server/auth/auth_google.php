@@ -32,31 +32,63 @@ $google_picture = $userinfo['picture'];
 // --- LOGIQUE DE LIAISON OU CONNEXION ---
 
 if (isset($_SESSION['user_id'])) {
-    // CAS 1 : L'utilisateur est DÉJÀ CONNECTÉ (il clique sur "Lier Google")
-    // On met à jour le compte existant (celui qui a été créé via Discord ID par exemple)
+    // CAS 1 : L'utilisateur est déjà connecté (LIAISON)
+    
+    // Vérifier si ce compte Google n'appartient pas déjà à quelqu'un d'autre
+    $check = $pdo->prepare("SELECT id FROM users WHERE google_id = ? AND id != ?");
+    $check->execute([$google_id, $_SESSION['user_id']]);
+    if ($check->fetch()) {
+        die("Erreur : Ce compte Google est déjà lié à un autre utilisateur.");
+    }
+
     $stmt = $pdo->prepare("UPDATE users SET google_id = ?, google_email = ?, google_picture = ? WHERE id = ?");
     $stmt->execute([$google_id, $google_email, $google_picture, $_SESSION['user_id']]);
     
     header('Location: ../../public/admin/index.php?success=google_linked');
     exit();
-
-} else {
-    // CAS 2 : Tentative de CONNEXION classique (Login)
+}else {
+    // CAS 2 : Tentative de CONNEXION
     $stmt = $pdo->prepare("SELECT * FROM users WHERE google_id = ? OR google_email = ?");
     $stmt->execute([$google_id, $google_email]);
     $user = $stmt->fetch();
 
     if ($user) {
-        // On connecte l'utilisateur
+        // Connexion normale...
         $_SESSION['user_id'] = $user['id'];
-        
-        // On met à jour ses infos au cas où
-        $update = $pdo->prepare("UPDATE users SET google_id = ?, google_picture = ? WHERE id = ?");
-        $update->execute([$google_id, $google_picture, $user['id']]);
-        
         header('Location: ../../public/admin/index.php');
         exit();
-    } else {
-        die("Accès refusé : L'administrateur ne vous a pas encore ajouté (Email: $google_email).");
+    } 
+    // NOUVEAU : Si l'utilisateur n'existe pas MAIS qu'il a un token d'invitation
+    elseif (isset($_SESSION['pending_invite_token'])) {
+        
+        // 1. Créer l'utilisateur
+        $stmt = $pdo->prepare("INSERT INTO users (username, google_id, google_email, google_picture) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$userinfo['name'], $google_id, $google_email, $google_picture]);
+        $new_user_id = $pdo->lastInsertId();
+
+        // 2. Lui attribuer son rôle d'invité
+        $role_name = $_SESSION['pending_invite_role'];
+        $role_stmt = $pdo->prepare("SELECT id FROM roles WHERE name = ?");
+        $role_stmt->execute([$role_name]);
+        $role_id = $role_stmt->fetchColumn();
+
+        if ($role_id) {
+            $stmt = $pdo->prepare("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)");
+            $stmt->execute([$new_user_id, $role_id]);
+        }
+
+        // 3. Supprimer l'invitation de la DB et de la session
+        $stmt = $pdo->prepare("DELETE FROM invitations WHERE token = ?");
+        $stmt->execute([$_SESSION['pending_invite_token']]);
+        unset($_SESSION['pending_invite_token']);
+        unset($_SESSION['pending_invite_role']);
+
+        // 4. Connecter
+        $_SESSION['user_id'] = $new_user_id;
+        header('Location: ../../public/admin/index.php?success=account_created');
+        exit();
+    }
+    else {
+        die("Accès refusé : Vous n'avez pas d'invitation.");
     }
 }

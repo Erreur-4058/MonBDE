@@ -1,0 +1,40 @@
+# ─── Build Stage ─────────────────────────────────────────────────────────────
+FROM php:8.2-apache
+
+# Extensions PHP nécessaires
+RUN apt-get update && apt-get install -y \
+        libsqlite3-dev \
+        curl \
+        unzip \
+    && docker-php-ext-install pdo pdo_sqlite \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# ─── Apache : activer mod_rewrite ─────────────────────────────────────────────
+RUN a2enmod rewrite
+
+# ─── Copie du code source ─────────────────────────────────────────────────────
+WORKDIR /var/www/html
+
+COPY core/ ./core/
+COPY Snack/site/   ./Snack/site/
+COPY Snack/api/    ./Snack/api/
+COPY Snack/db/init.sql ./Snack/db/init.sql
+COPY Snack/sw.js   ./Snack/sw.js
+COPY Snack/manifest.json ./Snack/manifest.json
+
+# ─── Création des dossiers persistants (volumes Docker les monteront dessus) ──
+RUN mkdir -p \
+        /var/www/html/core/database \
+        /var/www/html/Snack/db \
+        /var/www/html/Snack/api/uploads
+
+# ─── Permissions Apache sur les dossiers de données ───────────────────────────
+RUN chown -R www-data:www-data \
+        /var/www/html/core/database \
+        /var/www/html/Snack/db \
+        /var/www/html/Snack/api/uploads
+
+# ─── Configuration Apache ─────────────────────────────────────────────────────
+COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
+
+EXPOSE 80
