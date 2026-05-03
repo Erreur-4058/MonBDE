@@ -10,7 +10,7 @@ services:
     container_name: monbde_web
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "127.0.0.1:8089:80"  # Accessible uniquement par NPM, pas internet
     volumes:
       - sqlite_data:/var/www/html/core/database
       - snack_db:/var/www/html/Snack/db
@@ -41,7 +41,7 @@ services:
       - API_BOT_TOKEN=${API_BOT_TOKEN}
       - BOT_HTTP_PORT=${BOT_HTTP_PORT:-3001}
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"  # Interne uniquement
     networks:
       - monbde_net
     depends_on:
