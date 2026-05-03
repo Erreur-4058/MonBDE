@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
 
   # ─── Serveur Web PHP (Apache) ────────────────────────────────────────────────
@@ -10,7 +8,7 @@ services:
     container_name: monbde_web
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8089:80"  # Accessible uniquement par NPM, pas internet
+      - "8089:80"  # NPM peut accéder via IP du NAS
     volumes:
       - sqlite_data:/var/www/html/core/database
       - snack_db:/var/www/html/Snack/db
