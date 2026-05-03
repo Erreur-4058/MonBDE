@@ -26,11 +26,17 @@ jobs:
           script: |
             set -e
 
-            # ── Aller dans le dossier du projet ───────────────────────────────
-            cd ~/MonBDE_prod
-
-            # ── Mettre à jour le code ─────────────────────────────────────────
-            git pull origin prod
+            # ── Cloner si premier déploiement, sinon mettre à jour ────────────
+            if [ ! -d ~/MonBDE_prod ]; then
+              git clone https://github.com/Erreur-4058/MonBDE.git ~/MonBDE_prod
+              cd ~/MonBDE_prod
+              git checkout prod
+            else
+              cd ~/MonBDE_prod
+              git fetch origin
+              git checkout prod
+              git pull origin prod
+            fi
 
             # ── Générer le .env du bot depuis les secrets GitHub ──────────────
             cat > Snack/bot/.env <<EOF
