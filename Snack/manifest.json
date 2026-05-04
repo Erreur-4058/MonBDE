@@ -1,7 +1,7 @@
 {
   "name": "Snack App",
   "short_name": "Snack",
-  "start_url": "/site/index.html",
+  "start_url": "Snack/site/index.html",
   "display": "standalone",
   "background_color": "#0f0f0f",
   "theme_color": "#f59e0b",
