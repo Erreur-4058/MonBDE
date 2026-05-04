@@ -96,6 +96,12 @@ $users = $db->query("SELECT * FROM utilisateurs ORDER BY username ASC")->fetchAl
     <div class="container">
         <span class="navbar-brand">Snack Admin</span>
         <div>
+           <?php if (isset($user_roles) && in_array('admin', $user_roles)): ?>
+                <a href="/core/public/admin/index.php" class="btn btn-outline-secondary btn-sm fw-bold d-inline-flex align-items-center me-3" style="color: #94a3b8; border-color: #475569;">
+                    <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 5px;">settings_accessibility</span>
+                    Panel Core
+                </a>
+            <?php endif; ?>
             <a href="dashboard.php" class="btn btn-primary btn-sm fw-bold d-inline-flex align-items-center">
             <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 5px;">assignment</span>
             Commandes
