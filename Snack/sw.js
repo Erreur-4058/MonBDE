@@ -5,8 +5,8 @@ self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll([
-        '/site/index.html',
-        '/manifest.json'
+        '/Snack/site/index.html',
+        '/Snack/manifest.json'
       ]);
     })
   );
