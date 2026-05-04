@@ -1,6 +1,8 @@
 <?php require_once 'staff_protect.php'; 
 
 require_once 'config.php';
+ini_set('display_errors', '1');
+error_reporting(E_ALL);
 
 header('Content-Type: text/html; charset=utf-8');
 $db = getDB();
@@ -62,18 +64,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 }
 
 // ── Chargement des données ─────────────────────────────────────────
-$seuil = getSeuil($db);
+try {
+    $seuil = getSeuil($db);
 
-$produits = $db->query("
-    SELECT p.id, p.nom, p.description, p.stock, p.disponible, c.nom as cat_nom
-    FROM produits p
-    LEFT JOIN categories c ON c.id = p.categorie_id
-    ORDER BY
-        CASE WHEN p.stock = 0 THEN 0
-             WHEN p.stock = -1 THEN 9999
-             ELSE p.stock END ASC,
-        c.ordre, p.nom
-")->fetchAll();
+    $produits = $db->query("
+        SELECT p.id, p.nom, p.description, p.stock, p.disponible, c.nom as cat_nom
+        FROM produits p
+        LEFT JOIN categories c ON c.id = p.categorie_id
+        ORDER BY
+            CASE WHEN p.stock = 0 THEN 0
+                 WHEN p.stock = -1 THEN 9999
+                 ELSE p.stock END ASC,
+            c.ordre, p.nom
+    ")->fetchAll();
+} catch (Exception $e) {
+    die("<h1>Erreur SQLite Fatale</h1><p>" . htmlspecialchars($e->getMessage()) . "</p>");
+}
 
 $rupture   = array_values(array_filter($produits, fn($p) => $p['stock'] !== -1 && (int)$p['stock'] === 0));
 $faible    = array_values(array_filter($produits, fn($p) => $p['stock'] !== -1 && (int)$p['stock'] > 0 && (int)$p['stock'] <= $seuil));
