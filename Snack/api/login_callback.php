@@ -4,20 +4,21 @@ require_once 'config.php';
 header('Content-Type: text/html; charset=utf-8');
 
 $code = $_GET['code'] ?? null;
-if (!$code) die("Erreur : Pas de code reçu.");
+if (!$code)
+    die("Erreur : Pas de code reçu.");
 
 // --- CONFIGURATION ---
-$clientId     = getenv('DISCORD_CLIENT_ID') ?: '1485358310503878848';
+$clientId = getenv('DISCORD_CLIENT_ID') ?: '1485358310503878848';
 $clientSecret = trim(getenv('DISCORD_CLIENT_SECRET'));
-$redirectUri  = 'https://monbde.duckdns.org/Snack/api/login_callback.php';
+$redirectUri = 'http://monbde-snack.duckdns.org/Snack/api/login_callback.php';
 
 // --- ÉCHANGE ---
 $params = [
-    'client_id'     => $clientId,
+    'client_id' => $clientId,
     'client_secret' => $clientSecret,
-    'grant_type'    => 'authorization_code',
-    'code'          => $code,
-    'redirect_uri'  => $redirectUri,
+    'grant_type' => 'authorization_code',
+    'code' => $code,
+    'redirect_uri' => $redirectUri,
 ];
 
 $ch = curl_init('https://discord.com/api/oauth2/token');
@@ -38,7 +39,7 @@ if (isset($response['error'])) {
     echo "<h4>Vérifications à faire :</h4>";
     echo "1. Le code envoyé était : <code>$code</code><br>";
     echo "2. L'URL de redirection configurée est : <code>$redirectUri</code><br>";
-    echo "3. Ton Client Secret fait-il bien environ 32 caractères ? (Actuel : ".strlen($clientSecret)." caractères)<br>";
+    echo "3. Ton Client Secret fait-il bien environ 32 caractères ? (Actuel : " . strlen($clientSecret) . " caractères)<br>";
     echo "<br><a href='../site/index.html'>Réessayer</a>";
     exit;
 }
@@ -52,13 +53,13 @@ curl_close($ch);
 
 if ($user && isset($user['id'])) {
     $db = getDB();
-$stmt = $db->prepare("
+    $stmt = $db->prepare("
     INSERT INTO utilisateurs (discord_id, username, est_adherent) 
     VALUES (?, ?, -1) 
     ON CONFLICT(discord_id) DO UPDATE SET username=excluded.username
-");    
-$stmt->execute([$user['id'], $user['username']]);
-    
+");
+    $stmt->execute([$user['id'], $user['username']]);
+
     $stmt = $db->prepare("SELECT est_adherent FROM utilisateurs WHERE discord_id = ?");
     $stmt->execute([$user['id']]);
     $u = $stmt->fetch();
@@ -68,7 +69,7 @@ $stmt->execute([$user['id'], $user['username']]);
         localStorage.setItem('discord_user', JSON.stringify({
             id: '<?= $user['id'] ?>',
             username: '<?= $user['username'] ?>',
-            est_adherent: <?= (int)($u['est_adherent'] ?? 0) ?>
+            est_adherent: <?= (int) ($u['est_adherent'] ?? 0) ?>
         }));
         window.location.href = '../site/index.html';
     </script>
