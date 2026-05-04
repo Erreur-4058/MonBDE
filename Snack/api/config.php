@@ -48,10 +48,11 @@ function getDB(): PDO {
             est_adherent INTEGER DEFAULT 0
         )");
 
-        // Ajout des colonnes produits (Code-barre et Pack)
+        // Ajout des colonnes produits (Code-barre, Pack et Stock)
         try { $db->exec("ALTER TABLE produits ADD COLUMN code_barre TEXT"); } catch (Exception $e) {}
         try { $db->exec("ALTER TABLE produits ADD COLUMN code_barre_pack TEXT"); } catch (Exception $e) {}
         try { $db->exec("ALTER TABLE produits ADD COLUMN unites_par_pack INTEGER DEFAULT 1"); } catch (Exception $e) {}
+        try { $db->exec("ALTER TABLE produits ADD COLUMN stock INTEGER DEFAULT -1"); } catch (Exception $e) {}
     }
     return $db;
 }
