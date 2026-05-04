@@ -1,5 +1,9 @@
 <?php
 
+// --- 0. CHARGEMENT .env.dev (dev local php -S uniquement) ---
+require_once __DIR__ . '/../../../load_env.php';
+loadEnvDev(__DIR__ . '/../../../');
+
 ini_set('session.cookie_path', '/');
 session_set_cookie_params(0, '/');
 session_start();
