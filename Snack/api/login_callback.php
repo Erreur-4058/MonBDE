@@ -10,7 +10,8 @@ if (!$code)
 // --- CONFIGURATION ---
 $clientId = getenv('DISCORD_CLIENT_ID') ?: '1485358310503878848';
 $clientSecret = trim(getenv('DISCORD_CLIENT_SECRET'));
-$redirectUri = 'http://monbde-snack.duckdns.org/Snack/api/login_callback.php';
+$_snackBase = rtrim(getenv('SNACK_BASE_URL') ?: 'http://localhost', '/');
+$redirectUri = $_snackBase . '/Snack/api/login_callback.php';
 
 // --- ÉCHANGE ---
 $params = [

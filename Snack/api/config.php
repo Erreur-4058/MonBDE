@@ -17,7 +17,8 @@ define('DB_PATH', __DIR__ . '/../db/snack.sqlite');
 define('CORE_DB_PATH', realpath(__DIR__ . '/../../core/database/database.sqlite'));
 
 // --- 4. CONFIGURATION DISCORD & LOGIN ---
-define('CORE_LOGIN_URL', 'https://monbde.duckdns.org/Snack/api/login_callback.php');
+$_snackBase = rtrim(getenv('SNACK_BASE_URL') ?: 'http://localhost', '/');
+define('CORE_LOGIN_URL', $_snackBase . '/Snack/api/login_callback.php');
 define('DISCORD_WEBHOOK', getenv('DISCORD_WEBHOOK_URL') ?: '');
 define('DISCORD_BOT_TOKEN', getenv('API_BOT_TOKEN') ?: 'snack2025');
 define('DISCORD_CHANNEL_ID', getenv('DISCORD_CHANNEL_COMMANDES') ?: '1486310299559526492');

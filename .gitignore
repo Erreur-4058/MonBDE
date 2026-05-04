@@ -1,6 +1,8 @@
 # ─── Secrets & config sensibles ───────────────────────────────────────────────
+# .env est généré par GitHub Actions sur le serveur, jamais commité
 .env
 .env.local
+# .env.dev et .env.prod sont commités (pas de secrets dedans)
 
 # ─── Base de données (gérées par Docker volumes) ──────────────────────────────
 *.sqlite

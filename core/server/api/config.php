@@ -15,8 +15,9 @@ define('D_ID', getenv('DISCORD_CLIENT_ID'));
 define('D_SECRET', getenv('DISCORD_CLIENT_SECRET'));
 
 
-if (!defined('G_REDIRECT')) define('G_REDIRECT', 'https://monbde.duckdns.org/core/server/auth/auth_google.php');
-if (!defined('D_REDIRECT')) define('D_REDIRECT', 'https://monbde.duckdns.org/core/server/auth/auth_discord.php');
+$_appBase = rtrim(getenv('APP_BASE_URL') ?: 'http://localhost', '/');
+if (!defined('G_REDIRECT')) define('G_REDIRECT', $_appBase . '/core/server/auth/auth_google.php');
+if (!defined('D_REDIRECT')) define('D_REDIRECT', $_appBase . '/core/server/auth/auth_discord.php');
 
 // Connexion DB
 try {

@@ -65,6 +65,8 @@ jobs:
               echo "API_BOT_TOKEN=${API_BOT_TOKEN}"
               echo "API_BASE_URL=https://monbde.duckdns.org/Snack/api"
               echo "BOT_HTTP_PORT=${BOT_HTTP_PORT}"
+              echo "APP_BASE_URL=https://monbde.duckdns.org"
+              echo "SNACK_BASE_URL=http://monbde-snack.duckdns.org"
             } > .env
 
             # ── Générer le .env du bot Discord ────────────────────────────────
@@ -75,6 +77,8 @@ jobs:
               echo "API_BASE_URL=https://monbde.duckdns.org/Snack/api"
               echo "API_BOT_TOKEN=${API_BOT_TOKEN}"
               echo "BOT_HTTP_PORT=${BOT_HTTP_PORT}"
+              echo "APP_BASE_URL=https://monbde.duckdns.org"
+              echo "SNACK_BASE_URL=http://monbde-snack.duckdns.org"
             } > Snack/bot/.env
 
             # ── (Re)construire et redémarrer Docker ───────────────────────────

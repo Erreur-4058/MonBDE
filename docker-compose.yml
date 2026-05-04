@@ -21,6 +21,8 @@ services:
       - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
       - DISCORD_CHANNEL_COMMANDES=${DISCORD_CHANNEL_COMMANDES}
       - API_BOT_TOKEN=${API_BOT_TOKEN}
+      - APP_BASE_URL=${APP_BASE_URL:-http://localhost}
+      - SNACK_BASE_URL=${SNACK_BASE_URL:-http://localhost}
     networks:
       - monbde_net
 

@@ -2,8 +2,9 @@
 // api/login.php
 require_once 'config.php';
 
-$clientId = '1485358310503878848';
-$redirectUri = 'https://monbde.duckdns.org/Snack/api/login_callback.php';
+$clientId = getenv('DISCORD_CLIENT_ID') ?: '1485358310503878848';
+$_snackBase = rtrim(getenv('SNACK_BASE_URL') ?: 'http://localhost', '/');
+$redirectUri = $_snackBase . '/Snack/api/login_callback.php';
 $scope = 'identify';
 
 $params = [
