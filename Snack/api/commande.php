@@ -10,6 +10,7 @@ if (!$body) json_error('corps JSON invalide');
 
 $prenom  = trim($body['prenom'] ?? '');
 $discord_id = trim($body['discord_id'] ?? ''); // Récupéré depuis le site
+$salle   = trim($body['salle'] ?? ''); // Optionnel
 $panier  = $body['panier'] ?? [];
 
 if (!$prenom) json_error('Prénom requis');
@@ -70,9 +71,9 @@ foreach ($panier as $item) {
     $total_adherent += round($pa * $qty, 2);
 }
 
-// 4. Insérer en Base de Données
-$stmt = $db->prepare("INSERT INTO commandes (numero, prenom, discord_id, statut, total) VALUES (?, ?, ?, 'en_attente', ?)");
-$stmt->execute([$numero_db, $prenom, $discord_id, $total_normal]);
+// 4. Insérer en Base de Données (avec salle optionnelle)
+$stmt = $db->prepare("INSERT INTO commandes (numero, prenom, discord_id, salle, statut, total) VALUES (?, ?, ?, ?, 'en_attente', ?)");
+$stmt->execute([$numero_db, $prenom, $discord_id, $salle ?: null, $total_normal]);
 $commande_id = $db->lastInsertId();
 
 $stmt = $db->prepare("INSERT INTO commande_lignes (commande_id, produit_id, nom_produit, quantite, prix_unitaire, sous_total) VALUES (?, ?, ?, ?, ?, ?)");

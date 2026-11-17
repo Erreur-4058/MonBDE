@@ -47,14 +47,16 @@ function getDB(): PDO {
         $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         $db->exec('PRAGMA foreign_keys = ON');
-        
+        $db->exec("CREATE TABLE IF NOT EXISTS config (cle TEXT PRIMARY KEY, valeur TEXT)");
         // Création table utilisateurs si manquante
         $db->exec("CREATE TABLE IF NOT EXISTS utilisateurs (
             discord_id TEXT PRIMARY KEY,
             username TEXT,
             est_adherent INTEGER DEFAULT 0
         )");
-
+        try { $db->exec("ALTER TABLE commandes ADD COLUMN salle TEXT"); } catch (Exception $e) {}
+        try { $db->exec("ALTER TABLE categories ADD COLUMN visible INTEGER DEFAULT 1"); } catch (Exception $e) {}
+        try { $db->exec("ALTER TABLE produits ADD COLUMN visible INTEGER DEFAULT 1"); } catch (Exception $e) {}
         // Ajout des colonnes produits (Code-barre, Pack et Stock)
         try { $db->exec("ALTER TABLE produits ADD COLUMN code_barre TEXT"); } catch (Exception $e) {}
         try { $db->exec("ALTER TABLE produits ADD COLUMN code_barre_pack TEXT"); } catch (Exception $e) {}

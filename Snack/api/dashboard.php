@@ -115,6 +115,12 @@ $commandes = $db->query("SELECT * FROM commandes WHERE statut IN ('en_attente', 
                         <?= date('d/m H:i', strtotime($c['created_at'] . ' UTC')) ?>
                     </h5>
                     
+                    <?php if (!empty($c['salle'])): ?>
+                    <div class="mb-2">
+                        <span class="badge bg-info">📍 Salle <?= htmlspecialchars($c['salle']) ?></span>
+                    </div>
+                    <?php endif; ?>
+                    
                     <div class="item-list flex-grow-1">
                         <ul class="list-unstyled mb-0 small">
                             <?php foreach ($lignes as $l): ?>

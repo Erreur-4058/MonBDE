@@ -275,7 +275,33 @@
     margin-top: 5px; /* Ajustement fin si le # semble encore trop haut */
   }
 
-
+.flash-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    z-index: 2000; align-items: center; justify-content: center; padding: 20px;
+}
+.flash-content {
+    background: linear-gradient(135deg, #f59e0b, #ef4444); color: white;
+    padding: 30px; border-radius: 24px; text-align: center; max-width: 400px; width: 100%;
+    box-shadow: 0 0 30px rgba(245, 158, 11, 0.5); border: 4px solid white;
+    animation: flashPulse 1.5s infinite;
+}
+@keyframes flashPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+.btn-flash {
+    background: white; color: #ef4444; border: none; padding: 12px 24px;
+    border-radius: 12px; font-weight: 900; margin-top: 20px; cursor: pointer;
+    font-family: 'Syne', sans-serif; text-transform: uppercase;
+}
+.badge-special {
+    position: absolute; top: 40px; left: -5px;
+    background: #2563eb; color: white;
+    padding: 4px 10px; font-size: 0.7rem; font-weight: 800;
+    border-radius: 0 5px 5px 0; box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+    z-index: 10;
+}
 </style>
 </head>
 <body>
@@ -285,7 +311,7 @@
 <script>
   const ICONS_SVG = {
     cart: `<svg class="icon-svg" viewBox="0 0 256 256"><path d="M188,184H91.17a16,16,0,0,1-15.74-13.14L48.73,24H24" fill="none"/><circle cx="92" cy="204" r="20" fill="none"/><circle cx="188" cy="204" r="20" fill="none"/><path d="M70.55,144H196.1a16,16,0,0,0,15.74-13.14L224,64H56" fill="none"/></svg>`,
-    cookie: `<svg class="icon-svg" viewBox="0 0 256 256"><circle cx="156" cy="172" r="12"/><circle cx="92" cy="164" r="12"/><circle cx="84" cy="108" r="12"/><circle cx="132" cy="124" r="12"/><path d="M224,128a48,48,0,0,1-48-48,48,48,0,0,1-48-48,96,96,0,1,0,96,96Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>`,
+
     sun: `<svg class="icon-svg" viewBox="0 0 256 256"><line x1="128" y1="40" x2="128" y2="16" fill="none"/><circle cx="128" cy="128" r="56" fill="none"/><line x1="64" y1="64" x2="48" y2="48" fill="none"/><line x1="64" y1="192" x2="48" y2="208" fill="none"/><line x1="192" y1="64" x2="208" y2="48" fill="none"/><line x1="192" y1="192" x2="208" y2="208" fill="none"/><line x1="40" y1="128" x2="16" y2="128" fill="none"/><line x1="128" y1="216" x2="128" y2="240" fill="none"/><line x1="216" y1="128" x2="240" y2="128" fill="none"/></svg>`,
     system: `<svg class="icon-svg" viewBox="0 0 256 256"><rect x="32" y="48" width="192" height="144" rx="16" transform="translate(256 240) rotate(180)" fill="none"/><line x1="160" y1="224" x2="96" y2="224" fill="none"/><line x1="32" y1="152" x2="224" y2="152" fill="none"/><line x1="128" y1="192" x2="128" y2="224" fill="none"/></svg>`,
     moon: `<svg class="icon-svg" viewBox="0 0 256 256"><path d="M108.11,28.11A96.09,96.09,0,0,0,227.89,147.89,96,96,0,1,1,108.11,28.11Z" fill="none"/></svg>`,
@@ -297,7 +323,9 @@
 </script>
 
 <header>
-  <div class="logo"><script>document.write(ICONS_SVG.cookie)</script> <span>Snack</span></div>
+  <div class="logo"><img src="../light.svg" class="logo-icon-light" style="width:28px; height:auto;" alt="">
+            <img src="../dark.svg" class="logo-icon-dark" style="display:none; width:28px; height:auto;" alt="">
+            <span>Snack</span></div>
   <div class="header-actions">
     <!-- Bouton Thème cyclique -->
     <button class="action-btn" id="themeToggleBtn" onclick="cycleTheme()" title="Changer le thème"></button>
@@ -341,6 +369,10 @@
         <label>Pseudo Discord</label>
         <input type="text" id="inputDiscord" placeholder="Optionnel">
       </div>
+      <div class="form-group" id="salleGroup" style="display:none;">
+        <label>Salle de retrait</label>
+        <input type="number" id="inputSalle" placeholder="Ex: 101">
+      </div>
       <button class="btn-commander" id="btnCommander" onclick="passerCommande()" disabled>
         <script>document.write(ICONS_SVG.check)</script> Envoyer
       </button>
@@ -369,6 +401,26 @@
         </button>
     </div>
 </div>
+<div class="flash-overlay" id="flashOverlay">
+    <div class="flash-content">
+        <div style="color: white; margin-bottom: 10px;">
+            <script>document.write(ICONS_SVG.party)</script>
+        </div>
+        <h1 id="specialTitleDisplay" style="font-family: 'Syne'; font-weight: 800; font-size: 2rem; margin-bottom: 10px; text-transform: uppercase;">ÉVÉNEMENT</h1>
+        
+        <div style="background: rgba(0,0,0,0.15); padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2);">
+            <p id="specialMsgDisplay" style="font-weight: bold; font-size: 1.1rem; margin: 0;"></p>
+        </div>
+
+        <button class="btn-flash" onclick="document.getElementById('flashOverlay').style.display='none'">
+            VOIR LA SÉLECTION
+        </button>
+        <br>
+        <button onclick="document.getElementById('flashOverlay').style.display='none'" style="background:none; border:none; color:white; margin-top:15px; text-decoration:underline; font-size:0.8rem; cursor:pointer; opacity: 0.8;">
+            Fermer
+        </button>
+    </div>
+</div>
 <script>
 // --- CONFIG & STATE ---
 const API_BASE = window.location.origin + '/Snack/api';
@@ -376,6 +428,7 @@ const API_BASE = window.location.origin + '/Snack/api';
 let panier = {};
 let catalogue = [];
 let currentDiscordUser = JSON.parse(localStorage.getItem('discord_user')) || null;
+let res_global = null; // Déclaré en haut pour être accessible partout
 
 // --- GESTION DU THÈME CYCLIQUE ---
 const themes = ['system', 'light', 'dark'];
@@ -385,9 +438,15 @@ function applyTheme(t) {
     document.documentElement.setAttribute('data-theme', t);
     localStorage.setItem('snack_theme', t);
     const btn = document.getElementById('themeToggleBtn');
+    if (!btn) return;
     if (t === 'system') btn.innerHTML = ICONS_SVG.system;
     else if (t === 'light') btn.innerHTML = ICONS_SVG.sun;
     else btn.innerHTML = ICONS_SVG.moon;
+
+    // Toggle logo icons based on theme
+    const isLight = t === 'light';
+    document.querySelector('.logo-icon-light').style.display = isLight ? 'block' : 'none';
+    document.querySelector('.logo-icon-dark').style.display = isLight ? 'none' : 'block';
 }
 
 function cycleTheme() {
@@ -405,16 +464,17 @@ function updateAuthDisplay() {
 
     if (currentDiscordUser) {
         box.innerHTML = `<button onclick="logout()" class="action-btn" style="color:var(--muted)">Déconnexion</button>`;
-        inName.value = currentDiscordUser.username;
-        inName.disabled = true;
-        inDiscord.value = currentDiscordUser.username;
-        inDiscord.disabled = true;
+        // Prénom toujours libre
+        inName.disabled = false;
+        // Pseudo Discord auto-rempli mais modifiable
+        inDiscord.value = currentDiscordUser.username || '';
+        inDiscord.disabled = false;
     } else {
         box.innerHTML = `
             <a href="${API_BASE}/login.php" class="btn-discord">
                 <div>
                     <span>Connexion</span>
-                    <span class="opt">Facultatif</span>
+                    <span class="opt" style="font-size:0.6rem; display:block; opacity:0.7;">Facultatif</span>
                 </div>
             </a>
         `;
@@ -426,20 +486,51 @@ function logout() { localStorage.removeItem('discord_user'); location.reload(); 
 async function chargerMenu() {
     try {
         const r = await fetch(`${API_BASE}/produits.php`);
-        const res = await r.json();
-        catalogue = res.data.flatMap(c => c.produits);
-        afficherMenu(res.data);
-    } catch (e) { console.error(e); }
+        res_global = await r.json(); 
+        
+        catalogue = res_global.data.flatMap(c => c.produits);
+        afficherMenu(res_global.data);
+
+        // Afficher/masquer le champ salle selon config
+        try {
+            const sg = document.getElementById('salleGroup');
+            if (sg && res_global.show_salle) {
+                sg.style.display = 'block';
+            } else if (sg) {
+                sg.style.display = 'none';
+            }
+        } catch(e) {}
+
+        // Affichage de la popup d'annonce au chargement
+        if (res_global.special && res_global.special.active === '1') {
+    // On met à jour le titre (ex: CREPE)
+    document.getElementById('specialTitleDisplay').innerText = res_global.special.title;
+    
+    // On met le texte explicatif (ex: fait maison)
+    document.getElementById('specialMsgDisplay').innerText = res_global.special.badge;
+    
+    // On affiche la popup immédiatement
+    document.getElementById('flashOverlay').style.display = 'flex';
+}
+
+        majUI();
+    } catch (e) { console.error("Erreur chargement:", e); }
 }
 
 function afficherMenu(categories) {
     const el = document.getElementById('menuSection');
     el.innerHTML = '';
+    
     categories.forEach(cat => {
+        // On vérifie si CETTE catégorie est spéciale
+        const isSpecial = (res_global.special && res_global.special.active === '1' && cat.cat_id == res_global.special.category_id);
+        
         const div = document.createElement('div');
         div.innerHTML = `<h2 class="cat-title">${cat.categorie}</h2>`;
+        
         const grid = document.createElement('div');
         grid.className = 'produits-grid';
+        
         cat.produits.forEach(p => {
             const card = document.createElement('div');
             const rupture = p.en_rupture === true;
@@ -447,28 +538,24 @@ function afficherMenu(categories) {
             card.id = `prod-${p.id}`;
             if (!rupture) card.onclick = () => toggleProduit(p);
 
-            // Badge stock
             let stockBadge = '';
-            if (p.stock === -1) {
-                stockBadge = ''; // Illimité = pas de badge
-            } else if (p.stock === 0) {
-                stockBadge = `<span class="stock-badge stock-out">Rupture</span>`;
-            } else if (p.stock <= 5) {
-                stockBadge = `<span class="stock-badge stock-low">⚠ ${p.stock} restant${p.stock > 1 ? 's' : ''}</span>`;
-            } else {
-                stockBadge = `<span class="stock-badge stock-ok">${p.stock} en stock</span>`;
-            }
+            if (p.stock === -1) stockBadge = '';
+            else if (p.stock === 0) stockBadge = `<span class="stock-badge stock-out">Rupture</span>`;
+            else if (p.stock <= 5) stockBadge = `<span class="stock-badge stock-low">⚠ ${p.stock} restants</span>`;
+            else stockBadge = `<span class="stock-badge stock-ok">${p.stock} en stock</span>`;
 
             card.innerHTML = `
-                <div class="badge-cart"><script>document.write(ICONS_SVG.check)<\/script> Sélectionné</div>
+                ${isSpecial ? `<div class="badge-special">${res_global.special.badge}</div>` : ''}
+                <div class="badge-cart">${ICONS_SVG.check} Sélectionné</div>
                 <img src="${p.image ? API_BASE+'/uploads/'+p.image : 'https://via.placeholder.com/150'}" class="produit-img">
                 <div style="font-weight:600; font-size:0.85rem;">${p.nom}</div>
+                ${p.description ? `<div style="font-size:0.75rem; color:var(--muted); opacity:0.8; margin-top:2px;">${p.description}</div>` : ''}
                 <div style="margin-top:auto;">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
                         <div style="font-weight:800;">${p.prix_normal.toFixed(2)}€</div>
                         ${stockBadge}
                     </div>
-                    <div class="prix-adherent"><script>document.write(ICONS_SVG.user)<\/script> ${p.prix_adherent.toFixed(2)}€</div>
+                    <div class="prix-adherent">${ICONS_SVG.user} ${p.prix_adherent.toFixed(2)}€</div>
                 </div>
                 <div class="produit-qty-bar">
                     <button class="qty-btn" onclick="event.stopPropagation(); changerQty(${p.id}, -1)">-</button>
@@ -499,7 +586,15 @@ function changerQty(id, delta) {
 }
 
 function majUI() {
-    // Cartes
+    // Afficher/masquer le champ salle selon config
+    try {
+        const hasSalle = res_global && res_global.show_salle;
+        const sg = document.getElementById('salleGroup');
+        if (sg) {
+            sg.style.display = hasSalle ? 'block' : 'none';
+        }
+    } catch(e) {}
+
     catalogue.forEach(p => {
         const card = document.getElementById(`prod-${p.id}`);
         const qtyLabel = document.getElementById(`qty-val-${p.id}`);
@@ -512,7 +607,6 @@ function majUI() {
         }
     });
 
-    // Panier side
     const lines = document.getElementById('panierLignes');
     const items = Object.values(panier);
     document.getElementById('cartCount').innerText = items.reduce((a, b) => a + b.qty, 0);
@@ -537,21 +631,30 @@ function majUI() {
     document.getElementById('totalAdherent').innerText = totalA.toFixed(2) + '€';
     document.getElementById('panierTotaux').style.display = 'block';
     
-    const ready = currentDiscordUser || document.getElementById('inputPrenom').value.trim().length > 0;
-    document.getElementById('btnCommander').disabled = !ready;
+    const hasSalle = res_global && res_global.show_salle;
+    const prenomOk = currentDiscordUser || document.getElementById('inputPrenom').value.trim().length > 0;
+    const salleOk = !hasSalle || document.getElementById('inputSalle')?.value.trim().length > 0;
+    document.getElementById('btnCommander').disabled = !prenomOk || !salleOk;
 }
+
+// Écouteurs pour les champs (mise à jour du bouton à chaque frappe)
+document.addEventListener('DOMContentLoaded', () => {
+    const prenomInput = document.getElementById('inputPrenom');
+    const salleInput = document.getElementById('inputSalle');
+    if (prenomInput) prenomInput.addEventListener('input', majUI);
+    if (salleInput) salleInput.addEventListener('input', majUI);
+});
 
 async function passerCommande() {
     const btn = document.getElementById('btnCommander');
     btn.disabled = true; 
     btn.innerText = "Envoi...";
-    
-    // On récupère le nom (soit le champ, soit l'user Discord)
     const nomClient = currentDiscordUser ? currentDiscordUser.username : document.getElementById('inputPrenom').value;
 
     const payload = { 
         prenom: nomClient, 
         discord_id: currentDiscordUser ? currentDiscordUser.id : null, 
+        salle: document.getElementById('inputSalle')?.value.trim() || '',
         panier: Object.values(panier).map(it => ({ id: it.id, quantite: it.qty })) 
     };
 
@@ -562,66 +665,45 @@ async function passerCommande() {
             body: JSON.stringify(payload) 
         });
         const res = await r.json();
-        
         if (res.success) { 
-    // res.data.numero contient maintenant juste "1", "2"...
-     document.getElementById('modalNumero').innerText = res.data.numero; 
-    document.getElementById('modalSucces').style.display = 'flex'; 
-} else {
+            document.getElementById('modalNumero').innerText = res.data.numero; 
+            document.getElementById('modalSucces').style.display = 'flex'; 
+        } else {
             alert("Erreur: " + res.error);
             btn.disabled = false;
         }
-    } catch (e) { 
-        alert("Erreur de connexion au serveur"); 
-        btn.disabled = false; 
-    }
+    } catch (e) { alert("Erreur de connexion"); btn.disabled = false; }
 }
 
 function scrollToPanier() { document.getElementById('panierCol').scrollIntoView({ behavior: 'smooth' }); }
 
-// Init
+// --- INITIALISATION ---
 updateAuthDisplay();
 chargerMenu();
 document.getElementById('inputPrenom').addEventListener('input', majUI);
 
+// Rafraîchir les données automatiquement (pour détecter les changements admin)
+setInterval(() => { chargerMenu().catch(e => console.error("Refresh erreur:", e)); }, 10000);
 
-  if ('serviceWorker' in navigator) {
+// Service Worker & Installation
+if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('../sw.js', { scope: '/' });
-  }
+}
 
-  // 2. Gestion de l'installation
-  let deferredPrompt;
-  const installBtn = document.getElementById('installBtn');
-
-  window.addEventListener('beforeinstallprompt', (e) => {
-    // Empêche Chrome d'afficher sa petite barre automatique
+let deferredPrompt;
+const installBtn = document.getElementById('installBtn');
+window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
-    // Garde l'événement pour plus tard
     deferredPrompt = e;
-    // Affiche notre bouton personnalisé
     installBtn.style.display = 'block';
-  });
-
-  installBtn.addEventListener('click', async () => {
+});
+installBtn.addEventListener('click', async () => {
     if (deferredPrompt) {
-      // Affiche la modale officielle de Chrome
-      deferredPrompt.prompt();
-      // Attend la réponse de l'utilisateur
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log(`Réponse installation : ${outcome}`);
-      // On cache notre bouton
-      deferredPrompt = null;
-      installBtn.style.display = 'none';
+        deferredPrompt.prompt();
+        deferredPrompt = null;
+        installBtn.style.display = 'none';
     }
-  });
-
-  // Cacher le bouton si l'app est déjà installée
-  window.addEventListener('appinstalled', () => {
-    installBtn.style.display = 'none';
-    deferredPrompt = null;
-  });
-
-
+});
 </script>
 </body>
 </html>

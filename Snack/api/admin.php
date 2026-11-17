@@ -1,8 +1,24 @@
-<?php require_once 'staff_protect.php'; 
+<?php 
+require_once 'staff_protect.php'; 
 require_once 'config.php'; 
 
 header('Content-Type: text/html; charset=utf-8');
 $db = getDB();
+if (isset($_GET['action']) && $_GET['action'] === 'toggle_category_visibility') {
+    $id = (int)$_GET['id'];
+    // On utilise IFNULL pour gérer les anciennes catégories qui n'ont pas encore de valeur
+    $db->prepare("UPDATE categories SET visible = 1 - IFNULL(visible, 1) WHERE id = ?")
+       ->execute([$id]);
+    header("Location: admin.php?success=visibility_updated");
+    exit;
+}
+if (isset($_GET['action']) && $_GET['action'] === 'toggle_dispo') {
+    $id = (int)$_GET['id'];
+    $db->prepare("UPDATE produits SET disponible = 1 - IFNULL(disponible, 1) WHERE id = ?")
+       ->execute([$id]);
+    header("Location: admin.php?success=dispo_updated");
+    exit;
+}
 
 // --- 1. TRAITEMENT DES ACTIONS (POST) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -42,8 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             if ($stock < -1) $stock = -1;
 
             if (!empty($_POST['id'])) {
-            $stmt = $db->prepare("UPDATE produits SET categorie_id=?, nom=?, description=?, prix_normal=?, prix_adherent=?, disponible=?, image=?, stock=?, code_barre=?, code_barre_pack=?, unites_par_pack=? WHERE id=?");
-            $stmt->execute([$_POST['categorie_id'], $_POST['nom'], $_POST['description'], $_POST['prix_normal'], $_POST['prix_adherent'], $dispo, $image_nom, $stock, $code_barre, $code_barre_pack, $unites_par_pack, $_POST['id']]);
+                $stmt = $db->prepare("UPDATE produits SET categorie_id=?, nom=?, description=?, prix_normal=?, prix_adherent=?, disponible=?, image=?, stock=?, code_barre=?, code_barre_pack=?, unites_par_pack=? WHERE id=?");
+                $stmt->execute([$_POST['categorie_id'], $_POST['nom'], $_POST['description'], $_POST['prix_normal'], $_POST['prix_adherent'], $dispo, $image_nom, $stock, $code_barre, $code_barre_pack, $unites_par_pack, $_POST['id']]);
             } else {
                 $stmt = $db->prepare("INSERT INTO produits (categorie_id, nom, description, prix_normal, prix_adherent, disponible, image, stock, code_barre, code_barre_pack, unites_par_pack) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 $stmt->execute([$_POST['categorie_id'], $_POST['nom'], $_POST['description'], $_POST['prix_normal'], $_POST['prix_adherent'], $dispo, $image_nom, $stock, $code_barre, $code_barre_pack, $unites_par_pack]);
@@ -58,17 +74,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $stmt = $db->prepare("UPDATE utilisateurs SET est_adherent = 1 - est_adherent WHERE discord_id = ?");
             $stmt->execute([$_POST['discord_id']]);
         }
+        // --- ÉVÉNEMENT SPÉCIAL (Correction ici) ---
+        elseif ($action === 'save_special') {
+            $active = isset($_POST['special_active']) ? '1' : '0';
+            $stmt = $db->prepare("REPLACE INTO config (cle, valeur) VALUES (?, ?)");
+            $stmt->execute(['special_active', $active]);
+            $stmt->execute(['special_title', $_POST['special_title']]);
+            $stmt->execute(['special_category_id', $_POST['special_category_id']]);
+            $stmt->execute(['special_badge_text', $_POST['special_badge_text']]);
+        }elseif ($action === 'toggle_category_visibility') {
+            $db->prepare("UPDATE categories SET visible = 1 - visible WHERE id = ?")
+            ->execute([$_GET['id']]);
+            header("Location: admin.php?success=visibility_updated");
+            exit;
+        }
+        // --- CONFIGURATION COMMANDS (salle) ---
+        elseif ($action === 'save_command_config') {
+            $active = isset($_POST['show_salle']) ? '1' : '0';
+            $db->prepare("REPLACE INTO config (cle, valeur) VALUES ('show_salle', ?)")->execute([$active]);
+        }
 
-        header("Location: " . $_SERVER['PHP_SELF']);
+        // On redirige après n'importe quelle action réussie
+        header("Location: admin.php?success=1");
         exit;
+
     } catch (Exception $e) {
         $error = "Erreur : " . $e->getMessage();
     }
 }
 
-// --- 2. RÉCUPÉRATION DES DONNÉES (Après traitement) ---
+// --- 2. RÉCUPÉRATION DES DONNÉES (Pour l'affichage) ---
+
+// On récupère la config spéciale TOUT LE TEMPS (pour que les champs restent remplis)
+$spec = [];
+try {
+    $res_spec = $db->query("SELECT * FROM config WHERE cle LIKE 'special_%'")->fetchAll();
+    foreach($res_spec as $s) { $spec[$s['cle']] = $s['valeur']; }
+} catch(Exception $e) { /* Table config peut-être pas encore créée */ }
+
+// On récupère la config des commandes (show_salle)
+$cmd_config = [];
+try {
+    $res_cmd = $db->query("SELECT * FROM config WHERE cle = 'show_salle'")->fetchAll();
+    foreach($res_cmd as $c) { $cmd_config[$c['cle']] = $c['valeur']; }
+} catch(Exception $e) {}
+
+$show_salle = ($cmd_config['show_salle'] ?? '0') == '1';
+
 $categories = $db->query("SELECT * FROM categories ORDER BY ordre ASC")->fetchAll();
-$produits = $db->query("SELECT p.*, c.nom as cat_nom FROM produits p LEFT JOIN categories c ON p.categorie_id = c.id ORDER BY c.ordre, p.nom")->fetchAll();
+$produits = $db->query("SELECT p.*, c.nom as cat_nom, p.disponible FROM produits p LEFT JOIN categories c ON p.categorie_id = c.id ORDER BY c.ordre, p.nom")->fetchAll();
 $users = $db->query("SELECT * FROM utilisateurs ORDER BY username ASC")->fetchAll();
 ?>
 
@@ -118,6 +172,12 @@ bar_chart
             <a href="restock.php" class="btn btn-warning btn-sm fw-bold d-inline-flex align-items-center"><span class="material-symbols-outlined" style="font-size: 18px; margin-right: 5px;">
 inventory_2
 </span> Stock</a>
+            <a href="settings.php" class="btn btn-info btn-sm fw-bold text-white d-inline-flex align-items-center"><span class="material-symbols-outlined" style="font-size: 18px; margin-right: 5px;">
+settings
+</span> Settings</a>
+            <a href="members.php" class="btn btn-dark btn-sm fw-bold d-inline-flex align-items-center"><span class="material-symbols-outlined" style="font-size: 18px; margin-right: 5px;">
+people
+</span> Membres</a>
         </div>
     </div>
 </nav>
@@ -126,8 +186,10 @@ inventory_2
     <?php if (isset($error)): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
 
     <div class="row">
-        <!-- COLONNE GAUCHE : CATEGORIES ET MEMBRES -->
+
+        <!-- COLONNE GAUCHE : CATEGORIES -->
         <div class="col-lg-4">
+
             <!-- CATEGORIES -->
             <div class="card">
                 <div class="card-header bg-white d-flex align-items-center"> <span class="material-symbols-outlined me-2">category</span> Catégories</div>
@@ -145,60 +207,39 @@ inventory_2
                     <hr>
                     <table class="table table-sm">
                         <?php foreach ($categories as $cat): ?>
-<tr>
-    <td><?= $cat['ordre'] ?></td>
-    <td><?= htmlspecialchars($cat['nom']) ?></td>
-    <td class="text-end">
-        <!-- Bouton Modifier -->
-        <span class="btn-edit me-2" onclick="editCategory(<?= htmlspecialchars(json_encode($cat)) ?>)"><span class="material-symbols-outlined">
-edit
-</span></span>
-        
-        <!-- NOUVEAU : Bouton Supprimer -->
-        <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette catégorie ? Attention : cela supprimera aussi tous les produits à l\'intérieur !');">
-            <input type="hidden" name="action" value="delete_category">
-            <input type="hidden" name="id" value="<?= $cat['id'] ?>">
-            <button type="submit" class="btn-delete" style="border:none; background:none; color:#dc3545;">
-                <span class="material-symbols-outlined">delete</span>
-            </button>
-        </form>
-    </td>
-</tr>
-<?php endforeach; ?>
-                    </table>
-                </div>
-            </div>
+                        <tr>
+                            <td><?= $cat['ordre'] ?></td>
+                            <td><?= htmlspecialchars($cat['nom']) ?></td>
+                            <td class="text-end">
 
-            <!-- MEMBRES -->
-            <div class="card">
-                <div class="card-header bg-white">Membres Discord</div>
-                <div class="card-body p-0">
-                    <table class="table table-hover mb-0 align-middle">
-                        <thead class="table-light">
-                            <tr><th>Pseudo</th><th>Statut</th></tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach($users as $u): ?>
-                            <tr>
-                                <td class="small"><?= htmlspecialchars($u['username']) ?></td>
-                                <td>
-                                    <form method="POST">
-                                        <input type="hidden" name="action" value="toggle_adherent">
-                                        <input type="hidden" name="discord_id" value="<?= $u['discord_id'] ?>">
-                                        <button type="submit" class="btn btn-sm <?= $u['est_adherent'] ? 'btn-success' : 'btn-outline-secondary' ?>">
-                                            <?= $u['est_adherent'] ? 'Adhérent' : 'Visiteur' ?>
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
+                            <!-- Bouton Cacher/Afficher -->
+   <a href="admin.php?action=toggle_category_visibility&id=<?= $cat['id'] ?>" class="me-2" style="text-decoration:none; color: <?= ($cat['visible'] == 0 && isset($cat['visible'])) ? '#94a3b8' : '#2563eb' ?>;">
+        <span class="material-symbols-outlined" title="Changer la visibilité">
+            <?= ($cat['visible'] == 0 && isset($cat['visible'])) ? 'visibility_off' : 'visibility' ?>
+        </span>
+    </a>
+
+                                <!-- Bouton Modifier -->
+                            <span class="btn-edit me-2" onclick="editCategory(<?= htmlspecialchars(json_encode($cat)) ?>)"><span class="material-symbols-outlined">
+                                edit
+                                </span></span>
+                        
+                        <!-- NOUVEAU : Bouton Supprimer -->
+                        <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette catégorie ? Attention : cela supprimera aussi tous les produits à l\'intérieur !');">
+                            <input type="hidden" name="action" value="delete_category">
+                            <input type="hidden" name="id" value="<?= $cat['id'] ?>">
+                            <button type="submit" class="btn-delete" style="border:none; background:none; color:#dc3545;">
+                                <span class="material-symbols-outlined">delete</span>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                                    </table>
+                                </div>
             </div>
         </div>
 
-        <!-- COLONNE DROITE : PRODUITS -->
         <!-- COLONNE DROITE : PRODUITS -->
         <div class="col-lg-8">
             <div class="card">
@@ -329,6 +370,10 @@ cookie
                                 ?>
                                 </td>
                                 <td class="text-end">
+                                    <!-- Bouton Disponibilité -->
+                                    <a href="?action=toggle_dispo&id=<?= $p['id'] ?>" class="me-2" style="text-decoration:none; color: <?= ($p['disponible'] == 0) ? '#94a3b8' : '#2563eb' ?>;">
+                                        <span class="material-symbols-outlined"><?= ($p['disponible'] == 0) ? 'visibility_off' : 'visibility' ?></span>
+                                    </a>
                                     <span class="btn-edit me-2" onclick="editProduct(<?= htmlspecialchars(json_encode($p)) ?>)"><span class="material-symbols-outlined">
 edit
 </span></span>

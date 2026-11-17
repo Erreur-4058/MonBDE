@@ -126,6 +126,7 @@ $commandes = $stmt->fetchAll();
                     <th>Paiement</th>
                     <th>Statut</th>
                     <th class="text-end">Action</th>
+                    <th>Salle</th>
                 </tr>
             </thead>
             <tbody>
@@ -149,6 +150,13 @@ $commandes = $stmt->fetchAll();
                             <?= $c['statut'] === 'paye' ? 'PAYÉ' : 'ANNULÉ' ?>
                         </span>
                     </td>
+                    <td class="small text-muted">
+                        <?php if (!empty($c['salle'])): ?>
+                            <span class="badge bg-info">📍 <?= htmlspecialchars($c['salle']) ?></span>
+                        <?php else: ?>
+                            -
+                        <?php endif; ?>
+                    </td>
                     <td class="text-end">
                         <form method="POST" onsubmit="return confirm('Rétablir cette commande dans le Dashboard ?');">
                             <input type="hidden" name="numero" value="<?= $c['numero'] ?>">
@@ -163,7 +171,7 @@ $commandes = $stmt->fetchAll();
                 <?php endforeach; ?>
                 <?php if (empty($commandes)): ?>
                 <tr>
-                    <td colspan="7" class="text-center py-5 text-muted">
+                    <td colspan="8" class="text-center py-5 text-muted">
                         <span class="material-symbols-outlined d-block mb-2" style="font-size: 3rem; opacity: 0.3;">search_off</span>
                         Aucune commande trouvée avec ces filtres.
                     </td>
