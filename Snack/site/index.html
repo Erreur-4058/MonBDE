@@ -774,23 +774,24 @@ setInterval(() => { chargerMenu().catch(e => console.error("Refresh erreur:", e)
 
 // Service Worker & Installation
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('../sw.js', { scope: '/' });
+    try { navigator.serviceWorker.register('../sw.js', { scope: '/' }); } catch(e) {}
 }
 
 let deferredPrompt;
-const installBtn = document.getElementById('installBtn');
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    installBtn.style.display = 'block';
 });
-installBtn.addEventListener('click', async () => {
-    if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt = null;
-        installBtn.style.display = 'none';
-    }
-});
+const installBtn = document.getElementById('installBtn');
+if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt = null;
+            installBtn.style.display = 'none';
+        }
+    });
+}
 </script>
 </body>
 </html>
