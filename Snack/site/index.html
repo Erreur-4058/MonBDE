@@ -132,15 +132,21 @@
     font-weight: 700;
     padding: 4px 10px; 
     border-radius: 8px; 
-    display: inline-flex; 
+    display: flex; 
     align-items: center; 
-    gap: 4px;
-    margin-top: 5px;
+    gap: 6px;
+    margin-top: 6px;
+    width: 100%;
+    box-sizing: border-box;
     /* Couleurs par défaut (Dark Theme) */
     color: #4ade80; /* Vert très vif et clair */
     background: rgba(74, 222, 128, 0.15); 
     border: 1px solid rgba(74, 222, 128, 0.3);
   }
+
+  .prix-adherent .pa-label { font-weight: 600; opacity: 0.85; }
+  .prix-adherent .pa-prix  { font-weight: 800; font-size: 0.85rem; }
+  .prix-adherent .pa-eco   { margin-left: auto; font-size: 0.65rem; font-weight: 800; opacity: 0.8; white-space: nowrap; }
 
   /* Couleurs pour le Light Theme (on fonce le texte pour le contraste) */
   [data-theme="light"] .prix-adherent {
@@ -276,31 +282,57 @@
   }
 
 .flash-overlay {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
     z-index: 2000; align-items: center; justify-content: center; padding: 20px;
 }
 .flash-content {
-    background: linear-gradient(135deg, #f59e0b, #ef4444); color: white;
-    padding: 30px; border-radius: 24px; text-align: center; max-width: 400px; width: 100%;
-    box-shadow: 0 0 30px rgba(245, 158, 11, 0.5); border: 4px solid white;
-    animation: flashPulse 1.5s infinite;
+    position: relative; width: 100%; max-width: 380px; text-align: center; color: #fff;
+    padding: 36px 28px 26px; border-radius: 24px;
+    background: linear-gradient(145deg, #ea580c 0%, #dc2626 100%);
+    box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+    animation: modalPop 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
 }
-@keyframes flashPulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
+.flash-close {
+    position: absolute; top: 12px; right: 12px; width: 34px; height: 34px;
+    border-radius: 50%; border: none; cursor: pointer;
+    background: rgba(0,0,0,0.2); color: #fff; font-size: 1.3rem; line-height: 1;
+}
+.flash-close:hover { background: rgba(0,0,0,0.35); }
+.flash-icon {
+    width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+}
+.flash-icon .icon-svg { width: 32px; height: 32px; }
+.flash-title {
+    font-family: 'Syne', sans-serif; font-weight: 800;
+    font-size: clamp(1.4rem, 6vw, 1.8rem); line-height: 1.15;
+    text-transform: uppercase; margin: 0 0 16px;
+    text-wrap: balance; overflow-wrap: anywhere;
+}
+.flash-msg {
+    background: rgba(0,0,0,0.25); border-radius: 14px;
+    padding: 16px 18px; margin-bottom: 22px;
+    font-weight: 600; font-size: 1rem; line-height: 1.4;
 }
 .btn-flash {
-    background: white; color: #ef4444; border: none; padding: 12px 24px;
-    border-radius: 12px; font-weight: 900; margin-top: 20px; cursor: pointer;
-    font-family: 'Syne', sans-serif; text-transform: uppercase;
+    width: 100%; background: #fff; color: #c2410c; border: none;
+    padding: 14px 24px; border-radius: 12px; font-weight: 800; font-size: 0.9rem;
+    cursor: pointer; font-family: 'Syne', sans-serif; text-transform: uppercase;
 }
+.btn-flash:hover { transform: translateY(-1px); }
 .badge-special {
     position: absolute; top: 40px; left: -5px;
     background: #2563eb; color: white;
     padding: 4px 10px; font-size: 0.7rem; font-weight: 800;
     border-radius: 0 5px 5px 0; box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
     z-index: 10;
+}
+
+/* ─── COMMANDES FERMÉES ─── */
+.orders-closed-msg {
+    text-align: center; padding: 60px 20px; color: var(--muted); opacity: 0.6;
 }
 </style>
 </head>
@@ -324,8 +356,8 @@
 </script>
 
 <header>
-  <div class="logo"><img src="../light.svg" class="logo-icon-light" style="width:28px; height:auto;" alt="">
-            <img src="../dark.svg" class="logo-icon-dark" style="display:none; width:28px; height:auto;" alt="">
+  <div class="logo"><img src="light.svg" class="logo-icon-light" style="width:28px; height:auto;" alt="">
+            <img src="dark.svg" class="logo-icon-dark" style="display:none; width:28px; height:auto;" alt="">
             <span>Snack</span></div>
   <div class="header-actions">
     <!-- Bouton Thème cyclique -->
@@ -353,8 +385,10 @@
       <div id="panierTotaux" style="display:none; margin-top:15px; border-top:1px solid var(--border); padding-top:10px;">
         <div style="display:flex; justify-content:space-between;"><span>Total</span> <strong id="totalNormal">0€</strong></div>
         <div style="display:flex; justify-content:space-between; color:var(--green); font-size:0.9rem;">
-          <span>Prix Adhérent</span> <strong id="totalAdherent">0€</strong>
+          <span>Total adhérent</span> <strong id="totalAdherent">0€</strong>
         </div>
+        <div id="economieAdherent" style="display:none; text-align:right; color:var(--green); font-size:0.75rem; font-weight:700; margin-top:2px;"></div>
+        <div id="payMessage" style="display:none; margin-top:10px; padding:8px 10px; border-radius:8px; font-size:0.8rem; font-weight:600; text-align:center;"></div>
       </div>
     </div>
 
@@ -402,24 +436,17 @@
         </button>
     </div>
 </div>
-<div class="flash-overlay" id="flashOverlay">
+<div class="flash-overlay" id="flashOverlay" role="dialog" aria-modal="true" aria-labelledby="specialTitleDisplay" onclick="if (event.target === this) fermerFlash()">
     <div class="flash-content">
-        <div style="color: white; margin-bottom: 10px;">
+        <button class="flash-close" aria-label="Fermer" onclick="fermerFlash()">&times;</button>
+        <div class="flash-icon">
             <script>document.write(ICONS_SVG.party)</script>
         </div>
-        <h1 id="specialTitleDisplay" style="font-family: 'Syne'; font-weight: 800; font-size: 2rem; margin-bottom: 10px; text-transform: uppercase;">ÉVÉNEMENT</h1>
-        
-        <div style="background: rgba(0,0,0,0.15); padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2);">
-            <p id="specialMsgDisplay" style="font-weight: bold; font-size: 1.1rem; margin: 0;"></p>
+        <h1 id="specialTitleDisplay" class="flash-title">ÉVÉNEMENT</h1>
+        <div class="flash-msg" id="specialMsgBox">
+            <p id="specialMsgDisplay" style="margin:0;"></p>
         </div>
-
-        <button class="btn-flash" onclick="document.getElementById('flashOverlay').style.display='none'">
-            VOIR LA SÉLECTION
-        </button>
-        <br>
-        <button onclick="document.getElementById('flashOverlay').style.display='none'" style="background:none; border:none; color:white; margin-top:15px; text-decoration:underline; font-size:0.8rem; cursor:pointer; opacity: 0.8;">
-            Fermer
-        </button>
+        <button class="btn-flash" onclick="fermerFlash(true)">Voir la sélection</button>
     </div>
 </div>
 <script>
@@ -430,6 +457,7 @@ let panier = {};
 let catalogue = [];
 let currentDiscordUser = JSON.parse(localStorage.getItem('discord_user')) || null;
 let res_global = null; // Déclaré en haut pour être accessible partout
+let flashDejaAffichee = false; // évite que la popup revienne à chaque rafraîchissement auto
 
 // --- GESTION DU THÈME CYCLIQUE ---
 const themes = ['system', 'light', 'dark'];
@@ -445,7 +473,7 @@ function applyTheme(t) {
     else btn.innerHTML = ICONS_SVG.moon;
 
     // Toggle logo icons based on theme
-    const isLight = t === 'light';
+    const isLight = (t === 'light') || (t === 'system' && window.matchMedia('(prefers-color-scheme: light)').matches);
     document.querySelector('.logo-icon-light').style.display = isLight ? 'block' : 'none';
     document.querySelector('.logo-icon-dark').style.display = isLight ? 'none' : 'block';
 }
@@ -456,6 +484,11 @@ function cycleTheme() {
     applyTheme(currentTheme);
 }
 applyTheme(currentTheme);
+
+// Écouter les changements de préférence système (dark/light mode du PC/téléphone)
+window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+    if (currentTheme === 'system') applyTheme('system');
+});
 
 // --- AUTH ---
 function updateAuthDisplay() {
@@ -502,21 +535,47 @@ async function chargerMenu() {
             }
         } catch(e) {}
 
-        // Affichage de la popup d'annonce au chargement
+        // Afficher un message si les commandes sont fermées
+        const menuSec = document.getElementById('menuSection');
+        const btnCmd = document.getElementById('btnCommander');
+        if (!res_global.orders_open) {
+            menuSec.innerHTML = '<div class="orders-closed-msg"><h2>🍽️ Commandes fermées</h2><p>Les commandes ne sont pas ouvertes pour le moment.</p></div>';
+            btnCmd.disabled = true;
+        } else {
+            btnCmd.disabled = false;
+        }
+
+        // Affichage de la popup d'annonce (à chaque chargement de la page)
         if (res_global.special && res_global.special.active === '1') {
-    // On met à jour le titre (ex: CREPE)
-    document.getElementById('specialTitleDisplay').innerText = res_global.special.title;
-    
-    // On met le texte explicatif (ex: fait maison)
-    document.getElementById('specialMsgDisplay').innerText = res_global.special.badge;
-    
-    // On affiche la popup immédiatement
-    document.getElementById('flashOverlay').style.display = 'flex';
-}
+            const titre = res_global.special.title || '';
+            const msg   = res_global.special.badge || '';
+
+            document.getElementById('specialTitleDisplay').innerText = titre;
+            document.getElementById('specialMsgDisplay').innerText = msg;
+            document.getElementById('specialMsgBox').style.display = msg ? 'block' : 'none';
+
+            // Affichée une seule fois par chargement de page (le menu se rafraîchit toutes les 10 s)
+            if (!flashDejaAffichee) {
+                document.getElementById('flashOverlay').style.display = 'flex';
+                flashDejaAffichee = true;
+            }
+        }
 
         majUI();
     } catch (e) { console.error("Erreur chargement:", e); }
 }
+
+function fermerFlash(versSelection) {
+    const overlay = document.getElementById('flashOverlay');
+    overlay.style.display = 'none';
+    if (versSelection) {
+        const cible = document.getElementById('cat-special');
+        if (cible) cible.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.getElementById('flashOverlay').style.display === 'flex') fermerFlash();
+});
 
 function afficherMenu(categories) {
     const el = document.getElementById('menuSection');
@@ -527,6 +586,7 @@ function afficherMenu(categories) {
         const isSpecial = (res_global.special && res_global.special.active === '1' && cat.cat_id == res_global.special.category_id);
         
         const div = document.createElement('div');
+        if (isSpecial) div.id = 'cat-special';
         div.innerHTML = `<h2 class="cat-title">${cat.categorie}</h2>`;
         
         const grid = document.createElement('div');
@@ -556,7 +616,13 @@ function afficherMenu(categories) {
                         <div style="font-weight:800;">${p.prix_normal.toFixed(2)}€</div>
                         ${stockBadge}
                     </div>
-                    <div class="prix-adherent">${ICONS_SVG.user} ${p.prix_adherent.toFixed(2)}€</div>
+                    ${(p.prix_normal - p.prix_adherent) > 0.001 ? `
+                    <div class="prix-adherent" title="Prix réservé aux adhérents du BDE">
+                        ${ICONS_SVG.user}
+                        <span class="pa-label">Adhérent</span>
+                        <span class="pa-prix">${p.prix_adherent.toFixed(2)}€</span>
+                        <span class="pa-eco">−${(p.prix_normal - p.prix_adherent).toFixed(2)}€</span>
+                    </div>` : ''}
                 </div>
                 <div class="produit-qty-bar">
                     <button class="qty-btn" onclick="event.stopPropagation(); changerQty(${p.id}, -1)">-</button>
@@ -587,7 +653,8 @@ function changerQty(id, delta) {
 }
 
 function majUI() {
-    // Afficher/masquer le champ salle selon config
+    // Si les commandes sont fermées, ne rien faire
+    if (res_global && !res_global.orders_open) return;
     try {
         const hasSalle = res_global && res_global.show_salle;
         const sg = document.getElementById('salleGroup');
@@ -630,7 +697,26 @@ function majUI() {
     const totalA = items.reduce((a, b) => a + (b.prix_adherent * b.qty), 0);
     document.getElementById('totalNormal').innerText = totalN.toFixed(2) + '€';
     document.getElementById('totalAdherent').innerText = totalA.toFixed(2) + '€';
+    const eco = totalN - totalA;
+    const ecoEl = document.getElementById('economieAdherent');
+    if (eco > 0.001) {
+        ecoEl.innerText = 'Tu économises ' + eco.toFixed(2) + '€ avec l\'adhésion';
+        ecoEl.style.display = 'block';
+    } else {
+        ecoEl.style.display = 'none';
+    }
     document.getElementById('panierTotaux').style.display = 'block';
+    
+    // Message paiement espèces si total < 1€
+    const payMsg = document.getElementById('payMessage');
+    if (totalA < 1) {
+        payMsg.style.display = 'block';
+        payMsg.style.background = 'rgba(var(--accent-rgb), 0.15)';
+        payMsg.style.color = 'var(--accent)';
+        payMsg.innerText = '💵 Total adhérent < 1€ → paiement espèces uniquement au comptoir';
+    } else {
+        payMsg.style.display = 'none';
+    }
     
     const hasSalle = res_global && res_global.show_salle;
     const prenomOk = currentDiscordUser || document.getElementById('inputPrenom').value.trim().length > 0;
