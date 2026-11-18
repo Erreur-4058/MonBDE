@@ -1,20 +1,21 @@
-name: 🚀 Deploy MonBDE to Production
 
+name: 🚀 Deploy MonBDE to Production
+ 
 on:
   push:
     branches:
       - prod
-
+ 
 jobs:
   deploy:
     name: Deploy via SSH
     runs-on: ubuntu-latest
-
+ 
     steps:
       # ── 1. Récupérer le code ────────────────────────────────────────────────
       - name: ⬇️ Checkout code
         uses: actions/checkout@v4
-
+ 
       # ── 2. Déployer via SSH ok ─────────────────────────────────────────────────
       - name: 🔐 Deploy to server
         uses: appleboy/ssh-action@v1.0.3
@@ -29,15 +30,17 @@ jobs:
           DISCORD_GUILD_ID:          ${{ secrets.DISCORD_GUILD_ID }}
           API_BOT_TOKEN:             ${{ secrets.API_BOT_TOKEN }}
           BOT_HTTP_PORT:             ${{ secrets.BOT_HTTP_PORT }}
+          SUMUP_AFFILIATE_KEY:       ${{ secrets.SUMUP_AFFILIATE_KEY }}
+          SUMUP_APP_ID:              ${{ secrets.SUMUP_APP_ID }}
         with:
           host:     ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           port:     ${{ secrets.SSH_PORT }}
-          envs: GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,DISCORD_CLIENT_ID,DISCORD_CLIENT_SECRET,DISCORD_WEBHOOK_URL,DISCORD_CHANNEL_COMMANDES,DISCORD_TOKEN,DISCORD_GUILD_ID,API_BOT_TOKEN,BOT_HTTP_PORT
+          envs: GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,DISCORD_CLIENT_ID,DISCORD_CLIENT_SECRET,DISCORD_WEBHOOK_URL,DISCORD_CHANNEL_COMMANDES,DISCORD_TOKEN,DISCORD_GUILD_ID,API_BOT_TOKEN,BOT_HTTP_PORT,SUMUP_AFFILIATE_KEY,SUMUP_APP_ID
           script: |
             set -e
-
+ 
             # ── Cloner si premier déploiement, sinon mettre à jour ────────────
             REPO_DIR="${HOME}/MonBDE_prod"
             if [ ! -d "${REPO_DIR}/.git" ]; then
@@ -51,7 +54,7 @@ jobs:
               git checkout prod
               git pull origin prod
             fi
-
+ 
             # ── Générer le .env principal (docker-compose) ────────────────────
             {
               echo "GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}"
@@ -67,8 +70,10 @@ jobs:
               echo "BOT_HTTP_PORT=${BOT_HTTP_PORT}"
               echo "APP_BASE_URL=https://monbde.duckdns.org"
               echo "SNACK_BASE_URL=http://monbde-snack.duckdns.org"
+              echo "SUMUP_AFFILIATE_KEY=${SUMUP_AFFILIATE_KEY}"
+              echo "SUMUP_APP_ID=${SUMUP_APP_ID}"
             } > .env
-
+ 
             # ── Générer le .env du bot Discord ────────────────────────────────
             {
               echo "DISCORD_TOKEN=${DISCORD_TOKEN}"
@@ -80,10 +85,11 @@ jobs:
               echo "APP_BASE_URL=https://monbde.duckdns.org"
               echo "SNACK_BASE_URL=http://monbde-snack.duckdns.org"
             } > Snack/bot/.env
-
+ 
             # ── (Re)construire et redémarrer Docker ───────────────────────────
             docker compose down --remove-orphans
             docker compose build --no-cache
             docker compose up -d
-
+ 
             echo "✅ Déploiement terminé sur monbde.duckdns.org"
+ 
