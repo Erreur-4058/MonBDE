@@ -107,6 +107,11 @@ $tous_les_produits = $db->query("SELECT id, nom FROM produits ORDER BY nom ASC")
             <div class="alert alert-<?= $type ?>"><?= $txt ?></div>
         <?php endif; ?>
 
+        <!-- Bouton pour activer/relancer la caméra -->
+        <div class="text-center mb-3">
+            <button type="button" class="btn btn-outline-warning w-100 py-2" id="btn-start-cam" onclick="startCamera()">📷 Activer la caméra</button>
+        </div>
+
         <div id="reader"></div>
 
         <!-- 1. AJOUT DE STOCK -->
@@ -181,13 +186,27 @@ $tous_les_produits = $db->query("SELECT id, nom FROM produits ORDER BY nom ASC")
                     onclick="resetScanner()">Annuler</button>
             </form>
         </div>
-
-        <div class="mt-3"><input type="text" id="manual_ean" class="form-control bg-dark text-white border-secondary"
-                placeholder="Code manuel"></div>
     </div>
 
     <script>
         const html5QrCode = new Html5Qrcode("reader");
+        let isCamRunning = false;
+
+        function startCamera() {
+            if (isCamRunning) return;
+            document.getElementById('reader').style.display = 'block';
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess)
+                .then(() => { isCamRunning = true; })
+                .catch(err => { console.error("Erreur caméra :", err); });
+        }
+
+        function stopCamera() {
+            if (isCamRunning) {
+                html5QrCode.stop().then(() => {
+                    isCamRunning = false;
+                }).catch(err => { console.error("Erreur arrêt caméra :", err); });
+            }
+        }
 
         function togglePackField(show) {
             document.getElementById('pack_config').style.display = show ? 'block' : 'none';
@@ -196,11 +215,13 @@ $tous_les_produits = $db->query("SELECT id, nom FROM produits ORDER BY nom ASC")
             if (show) input.focus();
         }
 
-        async function onScanSuccess(decodedText) {
+        async function processBarcode(decodedText) {
+            // Arrêter la caméra si elle tourne lors d'un scan réussi
+            stopCamera();
+            document.getElementById('reader').style.display = 'none';
+
             const response = await fetch(`scanner_search.php?ean=${decodedText}`);
             const res = await response.json();
-            html5QrCode.stop();
-            document.getElementById('reader').style.display = 'none';
 
             if (res.success) {
                 const p = res.data;
@@ -227,6 +248,10 @@ $tous_les_produits = $db->query("SELECT id, nom FROM produits ORDER BY nom ASC")
             }
         }
 
+        function onScanSuccess(decodedText) {
+            processBarcode(decodedText);
+        }
+
         function calcul() {
             const qty = parseInt(document.getElementById('input-qty').value) || 0;
             const mult = parseInt(document.getElementById('p-multiplier').value) || 1;
@@ -244,13 +269,34 @@ $tous_les_produits = $db->query("SELECT id, nom FROM produits ORDER BY nom ASC")
         function resetScanner() {
             document.getElementById('res-section').style.display = 'none';
             document.getElementById('link-section').style.display = 'none';
-            document.getElementById('reader').style.display = 'block';
-            document.getElementById('manual_ean').value = "";
-            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
+            startCamera();
         }
 
-        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
-        document.getElementById('manual_ean').addEventListener('change', (e) => onScanSuccess(e.target.value));
+        // --- INTERCEPTION DE LA DOUCHETTE PHYSIQUE EN JS PUR ---
+        let codeBarre = "";
+        let dernierTemps = 0;
+
+        document.addEventListener("keydown", function (e) {
+            // Ignore si l'utilisateur est dans un champ de saisie (comme un select ou input actif)
+            if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") {
+                return;
+            }
+
+            const maintenant = Date.now();
+            if (maintenant - dernierTemps > 100) {
+                codeBarre = "";
+            }
+            dernierTemps = maintenant;
+
+            if (e.key === "Enter") {
+                if (codeBarre.length > 3) {
+                    processBarcode(codeBarre);
+                }
+                codeBarre = "";
+            } else if (e.key.length === 1) {
+                codeBarre += e.key;
+            }
+        });
     </script>
 </body>
 
