@@ -87,28 +87,31 @@ foreach ($lignes as $l) {
     $stmt_stock->execute([$l['quantite'], $l['produit_id']]);
 }
 
-// 5. Notifier le Bot Discord
-// Communication interne Docker : le service s'appelle 'bot' sur le réseau monbde_net
-$bot_url = 'http://bot:3001/nouvelle-commande';
-$payload_bot = [
-    'numero' => $numero_db, // On envoie le numéro complet au bot
-    'prenom' => $prenom,
-    'discord_id' => $discord_id,
-    'total_normal' => $total_normal,
-    'total_adherent' => $total_adherent,
-    'lignes' => $lignes
-];
+// 5. Notifier le Bot Discord (optionnel, ne doit pas bloquer)
+try {
+    $bot_url = 'http://bot:3001/nouvelle-commande';
+    $payload_bot = [
+        'numero' => $numero_db,
+        'prenom' => $prenom,
+        'discord_id' => $discord_id,
+        'total_normal' => $total_normal,
+        'total_adherent' => $total_adherent,
+        'lignes' => $lignes
+    ];
 
-$ch = curl_init($bot_url);
-curl_setopt_array($ch, [
-    CURLOPT_POST => true,
-    CURLOPT_POSTFIELDS => json_encode($payload_bot),
-    CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'X-Bot-Token: snack2025'],
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT => 2
-]);
-curl_exec($ch);
-curl_close($ch);
+    $ch = curl_init($bot_url);
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($payload_bot),
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'X-Bot-Token: snack2025'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 2
+    ]);
+    curl_exec($ch);
+    curl_close($ch);
+} catch(Exception $e) {
+    // Bot indisponible, on ignore
+}
 
 // 6. Réponse finale au site (on ne renvoie que le petit numéro pour l'affichage)
 json_success([

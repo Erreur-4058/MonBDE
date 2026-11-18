@@ -740,7 +740,7 @@ async function passerCommande() {
 
     const payload = { 
         prenom: nomClient, 
-        discord_id: currentDiscordUser ? currentDiscordUser.id : null, 
+        discord_id: currentDiscordUser ? (currentDiscordUser.id || '') : '', 
         salle: document.getElementById('inputSalle')?.value.trim() || '',
         panier: Object.values(panier).map(it => ({ id: it.id, quantite: it.qty })) 
     };
