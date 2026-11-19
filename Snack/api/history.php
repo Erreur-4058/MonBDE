@@ -12,6 +12,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $stmt->execute([$numero]);
         $msg = "success:La commande $numero a été renvoyée au Dashboard.";
     }
+    elseif ($_POST['action'] === 'supprimer') {
+        $stmt = $db->prepare("DELETE FROM commandes WHERE numero = ?");
+        $stmt->execute([$numero]);
+        $msg = "success:Commande $numero supprimée.";
+    }
+    elseif ($_POST['action'] === 'supprimer_bulk') {
+        $nums = $_POST['nums'] ?? [];
+        if (!empty($nums)) {
+            foreach ($nums as $n) {
+                $db->prepare("DELETE FROM commandes WHERE numero = ?")->execute([$n]);
+            }
+            $msg = "success:" . count($nums) . " commande(s) supprimée(s).";
+        }
+    }
     header("Location: history.php?msg=" . urlencode($msg));
     exit;
 }
@@ -119,14 +133,15 @@ $commandes = $stmt->fetchAll();
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
+                    <th><input type="checkbox" id="checkAll"></th>
                     <th>Date / Heure</th>
                     <th>Commande</th>
                     <th>Client</th>
                     <th>Total</th>
                     <th>Paiement</th>
                     <th>Statut</th>
-                    <th class="text-end">Action</th>
                     <th>Salle</th>
+                    <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -134,12 +149,34 @@ $commandes = $stmt->fetchAll();
                     $date = date('d/m H:i', strtotime($c['created_at']));
                     $num_parts = explode('-', $c['numero']);
                     $num_display = isset($num_parts[1]) ? "#".$num_parts[1] : $c['numero'];
+
+                    // Prix réellement payé selon est_adherent
+                    $price_paid = (float)$c['total'];
+                    if (($c['est_adherent'] ?? null) == 1) {
+                        // Re-calculer le prix adhérent depuis les lignes
+                        $stmt_lignes = $db->prepare("SELECT * FROM commande_lignes WHERE commande_id = ?");
+                        $stmt_lignes->execute([$c['id']]);
+                        $lignes_h = $stmt_lignes->fetchAll();
+                        $total_adh_h = 0;
+                        foreach($lignes_h as $l) {
+                            $sp = $db->prepare("SELECT prix_adherent FROM produits WHERE id = ?");
+                            $sp->execute([$l['produit_id']]);
+                            $p = $sp->fetch();
+                            if ($p) {
+                                $total_adh_h += ((float)$p['prix_adherent'] * (int)$l['quantite']);
+                            } else {
+                                $total_adh_h += ((float)$l['prix_unitaire'] * (int)$l['quantite']);
+                            }
+                        }
+                        $price_paid = $total_adh_h;
+                    }
                 ?>
                 <tr>
+                    <td><input type="checkbox" class="row-check" value="<?= $c['numero'] ?>"></td>
                     <td class="small text-muted"><?= $date ?></td>
                     <td class="fw-bold"><?= $num_display ?></td>
                     <td><?= htmlspecialchars($c['prenom']) ?></td>
-                    <td class="fw-bold text-primary"><?= number_format($c['total'], 2) ?>€</td>
+                    <td class="fw-bold text-primary"><?= number_format($price_paid, 2) ?>€</td>
                     <td>
                         <small class="text-uppercase text-muted fw-bold" style="font-size: 0.7rem;">
                             <?= $c['paiement'] ? str_replace('_', ' ', $c['paiement']) : '-' ?>
@@ -158,7 +195,7 @@ $commandes = $stmt->fetchAll();
                         <?php endif; ?>
                     </td>
                     <td class="text-end">
-                        <form method="POST" onsubmit="return confirm('Rétablir cette commande dans le Dashboard ?');">
+                        <form method="POST" onsubmit="return confirm('Rétablir cette commande dans le Dashboard ?');" style="display:inline;">
                             <input type="hidden" name="numero" value="<?= $c['numero'] ?>">
                             <input type="hidden" name="action" value="restaurer">
                             <button type="submit" class="btn btn-outline-primary btn-sm btn-restore d-inline-flex align-items-center">
@@ -166,12 +203,20 @@ $commandes = $stmt->fetchAll();
                                 Rétablir
                             </button>
                         </form>
+                        &nbsp;
+                        <form method="POST" onsubmit="return confirm('⚠️ Supprimer cette commande définitivement ?');" style="display:inline;">
+                            <input type="hidden" name="numero" value="<?= $c['numero'] ?>">
+                            <input type="hidden" name="action" value="supprimer">
+                            <button type="submit" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 <?php endforeach; ?>
                 <?php if (empty($commandes)): ?>
                 <tr>
-                    <td colspan="8" class="text-center py-5 text-muted">
+                    <td colspan="9" class="text-center py-5 text-muted">
                         <span class="material-symbols-outlined d-block mb-2" style="font-size: 3rem; opacity: 0.3;">search_off</span>
                         Aucune commande trouvée avec ces filtres.
                     </td>
@@ -180,7 +225,38 @@ $commandes = $stmt->fetchAll();
             </tbody>
         </table>
     </div>
+
+    <!-- SUPPRIMER SÉLECTION -->
+    <div class="mt-2">
+        <form method="POST" id="bulkForm" style="display:none;">
+            <input type="hidden" name="action" value="supprimer_bulk">
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('⚠️ Supprimer toutes les commandes sélectionnées définitivement ?');">
+                🗑️ Supprimer la sélection
+            </button>
+        </form>
+    </div>
 </div>
 
-</body>
-</html>
+<script>
+document.getElementById('checkAll').addEventListener('change', function() {
+    document.querySelectorAll('.row-check').forEach(cb => cb.checked = this.checked);
+    updateBulkBtn();
+});
+document.querySelectorAll('.row-check').forEach(cb => {
+    cb.addEventListener('change', updateBulkBtn);
+});
+function updateBulkBtn() {
+    const checked = document.querySelectorAll('.row-check:checked');
+    var form = document.getElementById('bulkForm');
+    form.querySelectorAll('.bulk-num').forEach(el => el.remove());
+    checked.forEach(cb => {
+        var inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = 'nums[]';
+        inp.value = cb.value;
+        inp.className = 'bulk-num';
+        form.appendChild(inp);
+    });
+    form.style.display = checked.length > 0 ? 'block' : 'none';
+}
+</script>
