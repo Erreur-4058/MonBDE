@@ -23,6 +23,8 @@ services:
       - API_BOT_TOKEN=${API_BOT_TOKEN}
       - APP_BASE_URL=${APP_BASE_URL:-http://localhost}
       - SNACK_BASE_URL=${SNACK_BASE_URL:-http://localhost}
+      - SUMUP_AFFILIATE_KEY=${SUMUP_AFFILIATE_KEY}
+      - SUMUP_APP_ID=${SUMUP_APP_ID}
     networks:
       - monbde_net
 

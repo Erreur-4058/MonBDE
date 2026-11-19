@@ -66,7 +66,6 @@
   }
   .logo { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
   .logo span { color: var(--accent); }
-  .logo-svg { width: 28px; height: auto; }
 
   .header-actions { display: flex; align-items: center; gap: 12px; }
 
@@ -306,9 +305,10 @@
 </style>
 </head>
 <body>
+  <!--
 <button id="installBtn" style="display:none; width:100%; background:#f59e0b; color:black; font-weight:800; border:none; padding:15px; position:fixed; bottom:0; z-index:9999;">
    INSTALLER L'APPLICATION SNACK
-</button>
+</button>-->
 <script>
   const ICONS_SVG = {
     cart: `<svg class="icon-svg" viewBox="0 0 256 256"><path d="M188,184H91.17a16,16,0,0,1-15.74-13.14L48.73,24H24" fill="none"/><circle cx="92" cy="204" r="20" fill="none"/><circle cx="188" cy="204" r="20" fill="none"/><path d="M70.55,144H196.1a16,16,0,0,0,15.74-13.14L224,64H56" fill="none"/></svg>`,
@@ -324,11 +324,9 @@
 </script>
 
 <header>
-  <div class="logo">
-    <svg class="logo-svg logo-icon" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="12">
-      <path d="M48 176 Q48 80 128 80 Q160 80 176 96 Q192 112 176 128 Q160 144 128 144 Q104 144 88 152 Q72 160 72 176" stroke="currentColor"/>
-    </svg>
-    <span>Snack</span></div>
+  <div class="logo"><img src="../light.svg" class="logo-icon-light" style="width:28px; height:auto;" alt="">
+            <img src="../dark.svg" class="logo-icon-dark" style="display:none; width:28px; height:auto;" alt="">
+            <span>Snack</span></div>
   <div class="header-actions">
     <!-- Bouton Thème cyclique -->
     <button class="action-btn" id="themeToggleBtn" onclick="cycleTheme()" title="Changer le thème"></button>
@@ -446,12 +444,10 @@ function applyTheme(t) {
     else if (t === 'light') btn.innerHTML = ICONS_SVG.sun;
     else btn.innerHTML = ICONS_SVG.moon;
 
-    // Toggle logo color based on theme (dark icon in light mode, white in dark)
-    const logoSvg = document.querySelector('.logo-icon');
-    if (logoSvg) {
-        const isLight = (t === 'light') || (t === 'system' && window.matchMedia('(prefers-color-scheme: light)').matches);
-        logoSvg.style.color = isLight ? '#111827' : '#f0f0f0';
-    }
+    // Toggle logo icons based on theme
+    const isLight = t === 'light';
+    document.querySelector('.logo-icon-light').style.display = isLight ? 'block' : 'none';
+    document.querySelector('.logo-icon-dark').style.display = isLight ? 'none' : 'block';
 }
 
 function cycleTheme() {
@@ -692,24 +688,23 @@ setInterval(() => { chargerMenu().catch(e => console.error("Refresh erreur:", e)
 
 // Service Worker & Installation
 if ('serviceWorker' in navigator) {
-    try { navigator.serviceWorker.register('../sw.js', { scope: '/' }); } catch(e) {}
+    navigator.serviceWorker.register('../sw.js', { scope: '/' });
 }
 
 let deferredPrompt;
+const installBtn = document.getElementById('installBtn');
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
+    installBtn.style.display = 'block';
 });
-const installBtn = document.getElementById('installBtn');
-if (installBtn) {
-    installBtn.addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            deferredPrompt = null;
-            installBtn.style.display = 'none';
-        }
-    });
-}
+installBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt = null;
+        installBtn.style.display = 'none';
+    }
+});
 </script>
 </body>
 </html>

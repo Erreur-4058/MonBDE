@@ -28,12 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         elseif ($action === 'delete_category') {
             $db->prepare("DELETE FROM categories WHERE id = ?")->execute([$_POST['id']]);
         }
-        // --- CONFIGURATION COMMANDS (salle + ouverture) ---
+        // --- CONFIGURATION COMMANDS (salle) ---
         elseif ($action === 'save_command_config') {
             $active = isset($_POST['show_salle']) ? '1' : '0';
             $db->prepare("REPLACE INTO config (cle, valeur) VALUES ('show_salle', ?)")->execute([$active]);
-            $orders_open = isset($_POST['orders_open']) ? '1' : '0';
-            $db->prepare("REPLACE INTO config (cle, valeur) VALUES ('orders_open', ?)")->execute([$orders_open]);
         }
 
         header("Location: settings.php?success=1");
@@ -61,12 +59,11 @@ try {
 
 $cmd_config = [];
 try {
-    $res_cmd = $db->query("SELECT * FROM config WHERE cle IN ('show_salle', 'orders_open')")->fetchAll();
+    $res_cmd = $db->query("SELECT * FROM config WHERE cle = 'show_salle'")->fetchAll();
     foreach($res_cmd as $c) { $cmd_config[$c['cle']] = $c['valeur']; }
 } catch(Exception $e) {}
 
 $show_salle = ($cmd_config['show_salle'] ?? '0') == '1';
-$orders_open = ($cmd_config['orders_open'] ?? '1') == '1';
 
 $categories = $db->query("SELECT * FROM categories ORDER BY ordre ASC")->fetchAll();
 ?>
@@ -138,11 +135,6 @@ $categories = $db->query("SELECT * FROM categories ORDER BY ordre ASC")->fetchAl
                         <div class="form-check form-switch mb-1">
                             <input class="form-check-input" type="checkbox" name="show_salle" <?= $show_salle ? 'checked' : '' ?>>
                             <label class="form-check-label fw-bold small">Afficher le champ "Salle"</label>
-                        </div>
-
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="orders_open" id="orders_open_check" <?= $orders_open ? 'checked' : '' ?>>
-                            <label class="form-check-label fw-bold small" for="orders_open_check">Commandes ouvertes</label>
                         </div>
                         
                         <button type="submit" class="btn btn-primary btn-sm w-100 mt-1">Mettre à jour</button>
