@@ -14,8 +14,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $action = $_POST['action'] ?? '';
 
     if ($action === 'paye_especes') {
-        $stmt = $db->prepare("UPDATE commandes SET statut = 'paye', paiement = 'especes' WHERE numero = ?");
-        $stmt->execute([$numero]);
+        $type = $_POST['type'] ?? 'ext';
+        $paiement_label = ($type === 'adh') ? 'especes_adh' : 'especes';
+        $est_adherent = ($type === 'adh') ? 1 : 0;
+        $stmt = $db->prepare("UPDATE commandes SET statut = 'paye', paiement = ?, est_adherent = ? WHERE numero = ?");
+        $stmt->execute([$paiement_label, $est_adherent, $numero]);
     } elseif ($action === 'annuler') {
         $stmt = $db->prepare("UPDATE commandes SET statut = 'annule' WHERE numero = ?");
         $stmt->execute([$numero]);
@@ -129,19 +132,40 @@ $commandes = $db->query("SELECT * FROM commandes WHERE statut IN ('en_attente', 
                         </ul>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center my-3">
-                        <span class="text-muted small">Total :</span>
-                        <span class="total-price"><?= number_format($c['total'], 2) ?>€</span>
+                    <div class="my-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-muted small">Total Adhérent :</span>
+                            <span class="fw-bold text-success"><?= number_format($total_adh, 2) ?>€</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Total Non Adhérent :</span>
+                            <span class="fw-bold text-primary"><?= number_format($total_normal, 2) ?>€</span>
+                        </div>
                     </div>
 
                     <div class="d-grid gap-2">
-                        <form method="POST" onsubmit="return confirm('Payer en espèces ?')">
-                            <input type="hidden" name="numero" value="<?= $c['numero'] ?>">
-                            <input type="hidden" name="action" value="paye_especes">
-                            <button type="submit" class="btn btn-success fw-bold w-100 py-2 d-flex align-items-center justify-content-center">
-                                <span class="material-symbols-outlined me-2">payments</span> ESPÈCES
-                            </button>
-                        </form>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <form method="POST" onsubmit="return confirm('Payer en espèces (adhérent) ?')">
+                                    <input type="hidden" name="numero" value="<?= $c['numero'] ?>">
+                                    <input type="hidden" name="action" value="paye_especes">
+                                    <input type="hidden" name="type" value="adh">
+                                    <button type="submit" class="btn btn-success fw-bold w-100 py-2 d-flex align-items-center justify-content-center">
+                                        <span class="material-symbols-outlined me-1" style="font-size:18px;">payments</span> Espèces Adh.
+                                    </button>
+                                </form>
+                            </div>
+                            <div class="col-6">
+                                <form method="POST" onsubmit="return confirm('Payer en espèces (non adhérent) ?')">
+                                    <input type="hidden" name="numero" value="<?= $c['numero'] ?>">
+                                    <input type="hidden" name="action" value="paye_especes">
+                                    <input type="hidden" name="type" value="ext">
+                                    <button type="submit" class="btn btn-success fw-bold w-100 py-2 d-flex align-items-center justify-content-center">
+                                        <span class="material-symbols-outlined me-1" style="font-size:18px;">payments</span> Espèces Non Adh.
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
 
                         <div class="row g-2">
                             <div class="col-6">
