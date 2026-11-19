@@ -33,8 +33,8 @@ foreach ($rows as $row) {
     ];
 }
 
-// 2. Récupérer la configuration de la Vente Flash et show_salle
-$res_config = $db->query("SELECT * FROM config WHERE cle LIKE 'special_%' OR cle = 'show_salle'")->fetchAll();
+// 2. Récupérer la configuration de la Vente Flash, show_salle et orders_open
+$res_config = $db->query("SELECT * FROM config WHERE cle LIKE 'special_%' OR cle IN ('show_salle', 'orders_open')")->fetchAll();
 $spec = [];
 foreach($res_config as $c) { $spec[$c['cle']] = $c['valeur']; }
 
@@ -49,7 +49,8 @@ echo json_encode([
         'category_id' => $spec['special_category_id'] ?? null,
         'badge' => $spec['special_badge_text'] ?? ''
     ],
-    'show_salle' => ($spec['show_salle'] ?? '0') == '1'
+    'show_salle' => ($spec['show_salle'] ?? '0') == '1',
+    'orders_open' => ($spec['orders_open'] ?? '1') == '1'
 ]);
 
 

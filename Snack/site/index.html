@@ -302,6 +302,11 @@
     border-radius: 0 5px 5px 0; box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
     z-index: 10;
 }
+
+/* ─── COMMANDES FERMÉES ─── */
+.orders-closed-msg {
+    text-align: center; padding: 60px 20px; color: var(--muted); opacity: 0.6;
+}
 </style>
 </head>
 <body>
@@ -502,6 +507,16 @@ async function chargerMenu() {
             }
         } catch(e) {}
 
+        // Afficher un message si les commandes sont fermées
+        const menuSec = document.getElementById('menuSection');
+        const btnCmd = document.getElementById('btnCommander');
+        if (!res_global.orders_open) {
+            menuSec.innerHTML = '<div class="orders-closed-msg"><h2>🍽️ Commandes fermées</h2><p>Les commandes ne sont pas ouvertes pour le moment.</p></div>';
+            btnCmd.disabled = true;
+        } else {
+            btnCmd.disabled = false;
+        }
+
         // Affichage de la popup d'annonce au chargement
         if (res_global.special && res_global.special.active === '1') {
     // On met à jour le titre (ex: CREPE)
@@ -587,7 +602,8 @@ function changerQty(id, delta) {
 }
 
 function majUI() {
-    // Afficher/masquer le champ salle selon config
+    // Si les commandes sont fermées, ne rien faire
+    if (res_global && !res_global.orders_open) return;
     try {
         const hasSalle = res_global && res_global.show_salle;
         const sg = document.getElementById('salleGroup');
